@@ -6,6 +6,8 @@
 #include <QtCore/QObject>
 #include <QShortcut>
 #include <QStyleFactory>
+#include <MenuBar.hpp>
+#include <MainView.hpp>
 
 int main(int argc, char *argv[])
 {
@@ -19,17 +21,17 @@ int main(int argc, char *argv[])
 	QShortcut* closeShortcut = new QShortcut(QKeySequence("Ctrl+W"), &window);
 	QObject::connect(closeShortcut, &QShortcut::activated, &window, &QWidget::close);
 
-	QHBoxLayout* mainLayout = new QHBoxLayout(&window);
+	QVBoxLayout* mainLayout = new QVBoxLayout(&window);
 	mainLayout->setContentsMargins(0, 0, 0, 0);
 	mainLayout->setSpacing(0);
 
-	LeftPanel* leftPanel = new LeftPanel(&window);
-	RightPanel* rightPanel = new RightPanel(&window);
+	MenuBar* menuBar = new MenuBar(&window);
+	MainView* mainView = new MainView(&window);
 
-	QObject::connect(leftPanel, &LeftPanel::pageSelected, rightPanel, &RightPanel::setStatus);
+	mainView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-	mainLayout->addWidget(leftPanel, 3);
-	mainLayout->addWidget(rightPanel, 7);
+	mainLayout->addWidget(menuBar);
+	mainLayout->addWidget(mainView, 1);
 
 	window.resize(1280, 720);
 	window.setMinimumSize(840, 420);
