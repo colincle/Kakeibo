@@ -1,9 +1,16 @@
 #include "MenuBar.hpp"
+#include "MenuBarButton.hpp"
 #include <QHBoxLayout>
-#include <QPushButton>
-#include <QLabel>
 
 MenuBar::MenuBar(QWidget* parent) : QWidget(parent)
+{
+	setStyle();
+	QHBoxLayout* layout = new QHBoxLayout(this);
+	layout->setContentsMargins(10, 0, 10, 0);
+	addButtons(layout);
+}
+
+void	MenuBar::setStyle()
 {
 	setAttribute(Qt::WA_StyledBackground, true);
 	setFixedHeight(50);
@@ -13,11 +20,10 @@ MenuBar::MenuBar(QWidget* parent) : QWidget(parent)
         background-color: #dbdbdbff;
         border-bottom: 1px solid #1a1a1a;
     )");
+}
 
-	QHBoxLayout* layout = new QHBoxLayout(this);
-
-	layout->setContentsMargins(10, 0, 10, 0);
-
+void	MenuBar::addButtons(QHBoxLayout* layout)
+{
 	QStringList labels =
 	{
 		"Importer des dépenses\n支出をインポートする",
@@ -28,24 +34,5 @@ MenuBar::MenuBar(QWidget* parent) : QWidget(parent)
 	};
 
 	for(const QString& label : labels)
-	{
-		QPushButton* btn = new QPushButton(label, this);
-		btn->setFlat(true);
-		btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-		btn->setFixedHeight(40);
-
-		btn->setStyleSheet
-		(R"(
-            font-family: "Helvetica Neue";
-            font-weight: "100";
-            background-color: #cccccc;
-            border: #dddddd;
-            border: 1px solid;
-            border-radius: 5px;
-            color: black;
-            padding: 4px 10px;
-        )");
-
-		layout->addWidget(btn);
-	}
+		layout->addWidget(new MenuBarButton(label, this));
 }

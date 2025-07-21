@@ -22,7 +22,7 @@ find "$DIR" -type f \( -iname \*.cpp -o -iname \*.hpp \) -exec astyle --style=al
 --break-closing-braces \
 --break-elseifs \
 --break-one-line-headers \
---add-braces {} \;
+--remove-braces {} \;
 
 # Move all .orig files to the 'orig' folder
 find "$DIR" -type f -iname "*.orig" -exec mv {} "$DIR/orig" \;
