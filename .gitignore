@@ -1,0 +1,11 @@
+# Ignore
+/*
+
+# Allow
+!/CMakeLists.txt
+!/.gitignore
+!/assets/
+!/external/
+!/include/
+!/scripts/
+!/src/
