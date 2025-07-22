@@ -7,6 +7,9 @@ class MenuBar : public QWidget
 {
 	Q_OBJECT
 
+signals:
+	void menuButtonClicked(int index);
+
 public:
 	explicit MenuBar(QWidget* parent = nullptr);
 

@@ -33,6 +33,13 @@ void	MenuBar::addButtons(QHBoxLayout* layout)
 		"Statistiques\n統計"
 	};
 
-	for(const QString& label : labels)
-		layout->addWidget(new MenuBarButton(label, this));
+for (int i = 0; i < labels.size(); ++i)
+{
+	MenuBarButton* btn = new MenuBarButton(labels[i], this);
+	layout->addWidget(btn);
+	connect(btn, &QPushButton::clicked, this, [this, i]() {
+		emit menuButtonClicked(i);
+	});
+}
+
 }

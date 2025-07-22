@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	mainLayout->setSpacing(0);
 
 	MenuBar* menuBar = new MenuBar(&window);
-	MainView* mainView = new MainView(&window);
+	MainView* mainView = new MainView(menuBar, &window);
 
 	mainView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
