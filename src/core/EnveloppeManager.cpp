@@ -1,5 +1,7 @@
 #include "EnveloppeManager.hpp"
 #include <fstream>
+#include <cstdlib>
+#include <filesystem>
 #include "json.hpp"
 
 using json = nlohmann::json;

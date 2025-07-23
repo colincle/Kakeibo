@@ -1,7 +1,10 @@
 #pragma once
-#include <QWidget>
-#include <QGridLayout>
 
+#include <QWidget>
+
+class QGridLayout;
+class QStackedWidget;
+class EnveloppesUi;
 class MenuBar;
 
 class MainView : public QWidget
@@ -12,9 +15,8 @@ public:
 	explicit MainView(MenuBar* menuBar, QWidget* parent = nullptr);
 
 private:
-	QGridLayout* gridLayout = nullptr;
+	QStackedWidget* stack = nullptr;
+	EnveloppesUi* enveloppesUI = nullptr;
 
 	void handleMenuAction(int i);
-	void showEnveloppes();
-	void addEnveloppe();
 };

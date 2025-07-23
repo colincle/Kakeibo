@@ -1,6 +1,10 @@
 #include "MenuBar.hpp"
 #include "MenuBarButton.hpp"
+
 #include <QHBoxLayout>
+#include <QStringList>
+#include <QSizePolicy>
+#include <QPushButton>
 
 MenuBar::MenuBar(QWidget* parent) : QWidget(parent)
 {
@@ -33,13 +37,13 @@ void	MenuBar::addButtons(QHBoxLayout* layout)
 		"Statistiques\n統計"
 	};
 
-for (int i = 0; i < labels.size(); ++i)
-{
-	MenuBarButton* btn = new MenuBarButton(labels[i], this);
-	layout->addWidget(btn);
-	connect(btn, &QPushButton::clicked, this, [this, i]() {
-		emit menuButtonClicked(i);
-	});
-}
-
+	for(int i = 0; i < labels.size(); ++i)
+	{
+		MenuBarButton* btn = new MenuBarButton(labels[i], this);
+		layout->addWidget(btn);
+		connect(btn, &QPushButton::clicked, this, [this, i]()
+		{
+			emit menuButtonClicked(i);
+		});
+	}
 }

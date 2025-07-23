@@ -1,18 +1,24 @@
 #pragma once
-#include <string>
-#include <Enveloppe.hpp>
-#include <filesystem>
+
 #include <vector>
+#include <string>
+#include <filesystem>
+
+#include "Enveloppe.hpp"
 
 class EnveloppeManager
 {
 public:
-	std::vector<Enveloppe> enveloppes;
 
 	EnveloppeManager();
+
+	std::vector<Enveloppe> getEnveloppes() { return enveloppes; }
+
 	void addEnveloppe(const std::string& name, int amount, int maxAmount, int goal, bool savings);
 
 private:
+
+	std::vector<Enveloppe> enveloppes;
 	std::filesystem::path basePath;
 	std::filesystem::path enveloppesPath;
 

@@ -1,5 +1,7 @@
 #include "MenuBarButton.hpp"
-#include <QPushButton>
+
+#include <QSizePolicy>
+#include <QString>
 
 MenuBarButton::MenuBarButton(const QString& text, QWidget* parent)
 	: QPushButton(text, parent)
