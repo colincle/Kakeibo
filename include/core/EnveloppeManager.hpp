@@ -15,6 +15,7 @@ public:
 	std::vector<Enveloppe> getEnveloppes() { return enveloppes; }
 
 	void addEnveloppe(const std::string& name, int amount, int maxAmount, int goal, bool savings);
+	void transfer(std::string from, std::string to, int amount);
 
 private:
 

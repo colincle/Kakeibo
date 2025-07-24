@@ -19,7 +19,7 @@ EnveloppesUi::EnveloppesUi(QWidget* parent) : QWidget(parent)
 	showEnveloppes();
 }
 
-void EnveloppesUi::showEnveloppes() //refactor
+void EnveloppesUi::showEnveloppes()
 {
 	clearEnveloppes();
 
@@ -91,13 +91,36 @@ void EnveloppesUi::addEnveloppe()
 		handleEnveloppeSubmission(fields);
 }
 
-void EnveloppesUi::createFormInputs(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f) //refactor
+void EnveloppesUi::createFormInputs(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f)
 {
-	f.nameInput       = new QLineEdit(dialog);
-	f.amountInput     = new QLineEdit(dialog);
-	f.maxAmountInput  = new QLineEdit(dialog);
-	f.goalInput       = new QLineEdit(dialog);
-	f.savingsCheck    = new QCheckBox("Épargne", dialog);
+	createFields(dialog, layout, f);
+	QLineEdit* edits[] = { f.nameInput, f.amountInput, f.maxAmountInput, f.goalInput };
+
+	for(QLineEdit * edit : edits)
+		edit->setStyleSheet("color: black; background-color: white;");
+
+	QLabel* labels[] =
+	{
+		qobject_cast<QLabel*>(layout->labelForField(f.nameInput)),
+		qobject_cast<QLabel*>(layout->labelForField(f.amountInput)),
+		qobject_cast<QLabel*>(layout->labelForField(f.maxAmountInput)),
+		qobject_cast<QLabel*>(layout->labelForField(f.goalInput))
+	};
+
+	for(QLabel * label : labels)
+		if(label)
+			label->setStyleSheet("color: black;");
+
+	f.savingsCheck->setStyleSheet("color: black;");
+}
+
+void EnveloppesUi::createFields(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f)
+{
+	f.nameInput = new QLineEdit(dialog);
+	f.amountInput = new QLineEdit(dialog);
+	f.maxAmountInput = new QLineEdit(dialog);
+	f.goalInput = new QLineEdit(dialog);
+	f.savingsCheck = new QCheckBox("Épargne", dialog);
 
 	QIntValidator* validator = new QIntValidator(0, 100000000, dialog);
 	f.amountInput->setValidator(validator);
@@ -109,30 +132,7 @@ void EnveloppesUi::createFormInputs(QDialog* dialog, QFormLayout* layout, Envelo
 	layout->addRow("Montant max", f.maxAmountInput);
 	layout->addRow("Objectif", f.goalInput);
 	layout->addRow(f.savingsCheck);
-
-	// Black text inside the input fields
-	QLineEdit* edits[] = { f.nameInput, f.amountInput, f.maxAmountInput, f.goalInput };
-	for (QLineEdit* edit : edits)
-	{
-		edit->setStyleSheet("color: black; background-color: white;");
-	}
-
-	// Black text for the field labels
-	QLabel* labels[] = {
-		qobject_cast<QLabel*>(layout->labelForField(f.nameInput)),
-		qobject_cast<QLabel*>(layout->labelForField(f.amountInput)),
-		qobject_cast<QLabel*>(layout->labelForField(f.maxAmountInput)),
-		qobject_cast<QLabel*>(layout->labelForField(f.goalInput))
-	};
-
-	for (QLabel* label : labels)
-		if (label)
-			label->setStyleSheet("color: black;");
-
-	f.savingsCheck->setStyleSheet("color: black;");
 }
-
-
 void EnveloppesUi::addDialogButtons(QDialog* dialog, QFormLayout* layout)
 {
 	QDialogButtonBox* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);

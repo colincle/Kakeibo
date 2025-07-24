@@ -73,3 +73,29 @@ void EnveloppeManager::addEnveloppe(const std::string& name, int amount, int max
 	enveloppes.emplace_back(name, amount, maxAmount, goal, savings);
 	saveEnveloppesToJson();
 }
+
+void EnveloppeManager::transfer(std::string from, std::string to, int amount)
+{
+	int found = 0;
+
+	for(Enveloppe& e : enveloppes)
+	{
+		if(e.getName() == from)
+		{
+			e.setAmount(e.getAmount() - amount);
+
+			if(++found == 2)
+				break;
+		}
+		else
+			if(e.getName() == to)
+			{
+				e.setAmount(e.getAmount() + amount);
+
+				if(++found == 2)
+					break;
+			}
+	}
+
+	saveEnveloppesToJson();
+}

@@ -13,6 +13,7 @@ class EnveloppesUi : public QWidget
 
 public:
 	EnveloppesUi(QWidget* parent = nullptr);
+	void showEnveloppes();
 
 	void addEnveloppe();
 
@@ -28,9 +29,9 @@ private:
 
 	QGridLayout* gridLayout = nullptr;
 
-	void showEnveloppes();
 	void clearEnveloppes();
 	void createFormInputs(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f);
 	void addDialogButtons(QDialog* dialog, QFormLayout* layout);
 	void handleEnveloppeSubmission(const EnveloppeFormFields& f);
+	void createFields(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f);
 };

@@ -1,4 +1,5 @@
 #include "MainView.hpp"
+#include "EnveloppesTransfer.hpp"
 #include "MenuBar.hpp"
 #include "EnveloppesUi.hpp"
 #include "EnveloppesTransfer.hpp"
@@ -36,7 +37,8 @@ void MainView::handleMenuAction(int index)
 		break;
 
 	case 1:
-		// Handle "Transférer entre enveloppes"
+		EnveloppesTransfer::transfer(this);
+		enveloppesUI->showEnveloppes();
 		break;
 
 	case 2:
