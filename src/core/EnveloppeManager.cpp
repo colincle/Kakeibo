@@ -25,26 +25,31 @@ void EnveloppeManager::createPaths()
 
 void EnveloppeManager::getEnveloppesFromJson()
 {
-	if(!std::filesystem::exists(enveloppesPath))
+	if (!std::filesystem::exists(enveloppesPath))
 	{
 		std::ofstream file(enveloppesPath);
 		json empty = json::object();
 		file << empty.dump(4);
-		return ;
+		return;
 	}
 
 	std::ifstream file(enveloppesPath);
 	json data = json::parse(file);
 
-	for(const auto& item : data)
+	for (const auto& item : data)
 	{
-		enveloppes.emplace_back(
-		    item.at("name").get<std::string>(),
-		    item.at("amount").get<int>(),
-		    item.at("maxAmount").get<int>(),
-		    item.at("goal").get<int>(),
-		    item.at("savings").get<bool>()
+		Enveloppe e(
+			item.at("name").get<std::string>(),
+			item.at("amount").get<int>(),
+			item.at("maxAmount").get<int>(),
+			item.at("goal").get<int>(),
+			item.at("savings").get<bool>()
 		);
+
+		if (item.contains("types"))
+			e.getTypes() = item.at("types").get<std::vector<std::string>>();
+
+		enveloppes.push_back(std::move(e));
 	}
 }
 
@@ -52,15 +57,15 @@ void EnveloppeManager::saveEnveloppesToJson()
 {
 	json data = json::array();
 
-	for(const auto& env : enveloppes)
+	for (const auto& env : enveloppes)
 	{
-		data.push_back(
-		{
+		data.push_back({
 			{ "name", env.getName() },
 			{ "amount", env.getAmount() },
 			{ "maxAmount", env.getMaxAmount() },
 			{ "goal", env.getGoal() },
-			{ "savings", env.isSavings() }
+			{ "savings", env.isSavings() },
+			{ "types", env.getTypes() }
 		});
 	}
 

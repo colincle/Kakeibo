@@ -2,7 +2,7 @@
 #include "EnveloppesTransfer.hpp"
 #include "MenuBar.hpp"
 #include "EnveloppesUi.hpp"
-#include "EnveloppesTransfer.hpp"
+#include "ImportExpenses.hpp"
 
 #include <QVBoxLayout>
 #include <QStackedWidget>
@@ -33,7 +33,8 @@ void MainView::handleMenuAction(int index)
 	switch(index)
 	{
 	case 0:
-		// Handle "Importer des dépenses"
+		ImportExpenses::import(this);
+		enveloppesUI->showEnveloppes();
 		break;
 
 	case 1:
