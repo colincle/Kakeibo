@@ -25,7 +25,7 @@ void EnveloppeManager::createPaths()
 
 void EnveloppeManager::getEnveloppesFromJson()
 {
-	if (!std::filesystem::exists(enveloppesPath))
+	if(!std::filesystem::exists(enveloppesPath))
 	{
 		std::ofstream file(enveloppesPath);
 		json empty = json::object();
@@ -36,18 +36,21 @@ void EnveloppeManager::getEnveloppesFromJson()
 	std::ifstream file(enveloppesPath);
 	json data = json::parse(file);
 
-	for (const auto& item : data)
+	for(const auto& item : data)
 	{
 		Enveloppe e(
-			item.at("name").get<std::string>(),
-			item.at("amount").get<int>(),
-			item.at("maxAmount").get<int>(),
-			item.at("goal").get<int>(),
-			item.at("savings").get<bool>()
+		    item.at("name").get<std::string>(),
+		    item.at("amount").get<int>(),
+		    item.at("maxAmount").get<int>(),
+		    item.at("goal").get<int>(),
+		    item.at("savings").get<bool>()
 		);
 
-		if (item.contains("types"))
-			e.getTypes() = item.at("types").get<std::vector<std::string>>();
+		if(item.contains("types"))
+			e.setTypes(item.at("types").get<std::vector<std::string>>());
+
+		if(item.contains("expenses"))
+			e.setExpenses(item.at("expenses").get<std::vector<Expense>>());
 
 		enveloppes.push_back(std::move(e));
 	}
@@ -57,15 +60,17 @@ void EnveloppeManager::saveEnveloppesToJson()
 {
 	json data = json::array();
 
-	for (const auto& env : enveloppes)
+	for(const auto& env : enveloppes)
 	{
-		data.push_back({
+		data.push_back(
+		{
 			{ "name", env.getName() },
 			{ "amount", env.getAmount() },
 			{ "maxAmount", env.getMaxAmount() },
 			{ "goal", env.getGoal() },
 			{ "savings", env.isSavings() },
-			{ "types", env.getTypes() }
+			{ "types", env.getTypes() },
+			{ "expenses", env.getExpenses() }
 		});
 	}
 
@@ -102,5 +107,22 @@ void EnveloppeManager::transfer(std::string from, std::string to, int amount)
 			}
 	}
 
+	saveEnveloppesToJson();
+}
+
+void EnveloppeManager::addTypeAndExpense(const std::string& name, const Expense& e)
+{
+	for(auto& env : getEnveloppes())
+		if(env.getName() == name)
+		{
+			env.addType(e.info);
+			addExpense(e, env);
+		}
+}
+
+void EnveloppeManager::addExpense(const Expense& e, Enveloppe& env)
+{
+	env.addExpense(e.amount);
+	env.addToExpenseVector(e);
 	saveEnveloppesToJson();
 }

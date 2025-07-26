@@ -1,26 +1,16 @@
 #!/bin/bash
 
-# Find relevant source files only
-find . -type f \(-name "*.cpp" -o -name "*.h" \) | while IFS= read -r file; do
-	# Check if the file is not empty
+# Get absolute path to script directory, then move to project root (assumes script is in scripts/)
+cd "$(dirname "$0")/.." || exit 1
+
+# Find all .cpp and .h files and clean lines with //debug
+find . -type f \( -name "*.cpp" -o -name "*.h" \) | while IFS= read -r file; do
 	if [[ -s "$file" ]]; then
-		# Create a temporary file for safe processing
-		tmp_file=$(mktemp)
-		
-		# Print and mark the lines containing " //debug" anywhere on the line
-		grep "//debug" "$file" | while IFS= read -r line; do
-			echo "Removed: $line"
-		done
-		
-		# Remove lines containing "//debug" and save to the temporary file
-		grep -v "//debug" "$file" > "$tmp_file"
-		
-		# Only replace the original file if the operation succeeds
-		if [[ $? -eq 0 ]]; then
-			mv "$tmp_file" "$file"
-		else
-			echo "Error processing: $file"
-			rm "$tmp_file" # Cleanup the temporary file in case of failure
+		if grep -q "//debug" "$file"; then
+			echo "Processing: $file"
+			grep "//debug" "$file" | sed 's/^/Removed: /'
+			tmp_file=$(mktemp)
+			sed '/\/\/debug/d' "$file" > "$tmp_file" && mv "$tmp_file" "$file"
 		fi
 	fi
 done

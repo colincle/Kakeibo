@@ -1,6 +1,12 @@
-#pragma once //WIP
+#pragma once
 
-#include "Parser"
+#include <string>
+#include <vector>
+#include <utility>
+
+#include "Parser.hpp"
+#include "ExpenseStruct.hpp"
+#include "Enveloppe.hpp"
 
 class QWidget;
 
@@ -15,5 +21,7 @@ private:
 public:
 
 	static void import(QWidget* parent);
-	static void addExpense(QWidget* parent, Expense e);
+	static void addExpense(QWidget* parent, const Expense& e);
+	static std::pair<int, std::string> showImportDialog(QWidget* parent);
+	static std::string selectEnveloppeDialog(QWidget* parent, const std::vector<Enveloppe>& enveloppes, const Expense& e);
 };

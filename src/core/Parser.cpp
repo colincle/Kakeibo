@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "ExpenseStruct.hpp"
 
 #include <string>
 #include <vector>
@@ -91,11 +92,29 @@ std::vector<Expense> Parser::fillExpensesStruct(std::vector<std::string> lines, 
 		if(date.empty() || (debitStr.empty() && creditStr.empty()) || info.empty())
 			continue;
 
+		auto trim = [](std::string & s)
+		{
+			s.erase(0, s.find_first_not_of(" \t\r\n"));
+			s.erase(s.find_last_not_of(" \t\r\n") + 1);
+			s.erase(std::remove(s.begin(), s.end(), ','), s.end());
+			s.erase(std::remove(s.begin(), s.end(), '.'), s.end());
+		};
+
+		trim(debitStr);
+		trim(creditStr);
+
 		Expense e;
 		e.date = parseShortDate(year, date);
-		e.debit = std::stoi(debitStr);
-		e.credit = std::stoi(creditStr);
-		e.info = removeIsolatedNumber(info);;
+
+		if(!debitStr.empty())
+			e.amount = -std::stoi(debitStr);
+		else
+			if(!creditStr.empty())
+				e.amount = std::stoi(creditStr);
+			else
+				continue;
+
+		e.info = removeIsolatedNumber(info);
 		expenses.push_back(e);
 	}
 

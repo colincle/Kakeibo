@@ -12,10 +12,12 @@ public:
 
 	EnveloppeManager();
 
-	std::vector<Enveloppe> getEnveloppes() { return enveloppes; }
+	std::vector<Enveloppe>& getEnveloppes() { return enveloppes; }
 
 	void addEnveloppe(const std::string& name, int amount, int maxAmount, int goal, bool savings);
 	void transfer(std::string from, std::string to, int amount);
+	void addTypeAndExpense(const std::string& name, const Expense& e);
+	void addExpense(const Expense& e, Enveloppe &env);
 
 private:
 

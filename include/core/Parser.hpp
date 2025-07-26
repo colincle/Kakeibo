@@ -4,13 +4,7 @@
 #include <vector>
 #include <chrono>
 
-struct Expense
-{
-	std::chrono::year_month_day date;
-	int debit;
-	int credit;
-	std::string info;
-};
+#include "ExpenseStruct.hpp"
 
 class Parser
 {
