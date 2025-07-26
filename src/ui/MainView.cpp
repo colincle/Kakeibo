@@ -3,6 +3,7 @@
 #include "MenuBar.hpp"
 #include "EnveloppesUi.hpp"
 #include "History.hpp"
+#include "Stats.hpp"
 #include "ImportExpenses.hpp"
 
 #include <QVBoxLayout>
@@ -24,6 +25,9 @@ MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
 	history = new History(this);
 	stack->addWidget(history);
 
+	stats = new Stats(this);
+	stack->addWidget(stats);
+
 	stack->setCurrentIndex(0);
 
 }
@@ -41,25 +45,22 @@ void MainView::handleMenuAction(int index)
 		break;
 
 	case 2:
-		// Handle "stats" later
+		stack->setCurrentWidget(stats);
 		break;
 
 	case 3:
 		ImportExpenses::import(this);
-		enveloppesUI->showEnveloppes();
-		history->showHistory();
+		updatePages();
 		break;
 
 	case 4:
 		EnveloppesTransfer::transfer(this);
-		enveloppesUI->showEnveloppes();
-		history->showHistory();
+		updatePages();
 		break;
 
 	case 5:
 		enveloppesUI->addEnveloppe();
-		enveloppesUI->showEnveloppes();
-		history->showHistory();
+		updatePages();
 		break;
 
 	default:
@@ -67,3 +68,9 @@ void MainView::handleMenuAction(int index)
 	}
 }
 
+void MainView::updatePages()
+{
+	enveloppesUI->showEnveloppes();
+	history->showHistory();
+	stats->showStats();
+}

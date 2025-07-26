@@ -6,6 +6,7 @@ class QGridLayout;
 class QStackedWidget;
 class EnveloppesUi;
 class History;
+class Stats;
 class MenuBar;
 
 class MainView : public QWidget
@@ -19,6 +20,8 @@ private:
 	QStackedWidget* stack = nullptr;
 	EnveloppesUi* enveloppesUI = nullptr;
 	History* history = nullptr;
+	Stats* stats = nullptr;
 
 	void handleMenuAction(int i);
+	void updatePages();
 };
