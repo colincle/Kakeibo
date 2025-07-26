@@ -90,6 +90,7 @@ void Stats::populateTable(QTableWidget* table)
 		int perMonthAvg = monthCount ? total / monthCount : 0;
 
 		QString perYearStr;
+
 		if(monthCount >= 12)
 		{
 			int perYearAvg = (total * 12) / monthCount;
@@ -139,6 +140,7 @@ void Stats::updateGlobalDateRange()
 				maxDate = exp.date;
 		}
 	}
+
 	if(minDate && maxDate)
 	{
 		auto ymdMin = std::chrono::year_month_day{*minDate};

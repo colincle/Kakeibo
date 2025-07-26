@@ -1,12 +1,16 @@
 #pragma once
 
 #include <QCoreApplication>
+#include <QString>
 
+// For bundled app
 // #define RESOURCES_PATH             (QCoreApplication::applicationDirPath() + "/../Resources/assets/")
-#define RESOURCES_PATH             "/../Resources/assets/"
 // #define ICONS_PATH                 (RESOURCES_PATH + "icons/")
-// #define IMAGES_PATH                (RESOURCES_PATH + "images/")
 
-// #define VERSUS                     (IMAGES_PATH + "Versus.png")
+// For dev
+#define RESOURCES_PATH             "../assets/"
+#define ICONS_PATH                 RESOURCES_PATH "icons/"
 
-// #define LIBRARY_ICON               (ICONS_PATH + "Library.png")
+#define CROSS_ICON                 QStringLiteral(ICONS_PATH "Cross.png")
+#define LEFT_ICON                  QStringLiteral(ICONS_PATH "Left.png")
+#define RIGHT_ICON                 QStringLiteral(ICONS_PATH "Right.png")

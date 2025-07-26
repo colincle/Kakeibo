@@ -14,7 +14,7 @@ MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
 	connect(menuBar, &MenuBar::menuButtonClicked, this, &MainView::handleMenuAction);
 
 	QVBoxLayout* layout = new QVBoxLayout(this);
-	layout->setContentsMargins(10, 0, 10, 0);
+	layout->setContentsMargins(3, 0, 3, 0);
 
 	stack = new QStackedWidget(this);
 	layout->addWidget(stack);

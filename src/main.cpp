@@ -13,7 +13,7 @@ QWidget* createMainWindow()
 	QWidget* window = new QWidget;
 	window->setAttribute(Qt::WA_StyledBackground, true);
 	window->setAutoFillBackground(true);
-	window->setStyleSheet("background-color: white;");
+	window->setStyleSheet("background-color: #242F32;");
 	window->setWindowTitle("Kakeibo");
 	window->resize(1280, 720);
 	window->setMinimumSize(840, 420);
