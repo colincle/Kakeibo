@@ -48,32 +48,8 @@ int main(int argc, char *argv[])
 	return app.exec();
 }
 
-// #include <iostream>
-// #include <vector>
-// #include <string>
-// #include <chrono>
-// #include "Parser.hpp"
+/*
+TO DO
 
-// int main()
-// {
-
-// std::string input =
-//	"7/3\t977\t0\tデビット1 292747 イオングル－フ\n"
-//	"7/4\t0\t165842\t振込IB1 コラン ナツキ\n"
-//	"7/4\t0\t167300\t振込1 REVOLUT TECHNOL\n"
-//	"7/4\t570\t0\tデビット1 893631 トモウイメンズ";	std::chrono::year year{2025};
-//	std::vector<Expense> expenses = Parser::parseExpenses(input, year);
-
-//	for (const auto& e : expenses)
-//	{
-//	std::cout << "Date: |"
-// << int(e.date.year()) << '-'
-// << unsigned(e.date.month()) << '-'
-// << unsigned(e.date.day()) << "|\n"
-// << "Debit: |"  << e.debit  << "|\n"
-// << "Credit: |" << e.credit << "|\n"
-// << "Info: |"   << e.info   << "|\n\n";
-//	}
-
-//	return 0;
-// }
+- Format style sheets
+*/

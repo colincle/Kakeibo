@@ -152,5 +152,4 @@ void EnveloppesUi::handleEnveloppeSubmission(const EnveloppeFormFields& f)
 	bool savings = f.savingsCheck->isChecked();
 
 	g_enveloppeManager.addEnveloppe(name.toStdString(), amount, maxAmount, goal, savings);
-	showEnveloppes();
 }

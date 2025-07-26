@@ -1,7 +1,7 @@
-# Ignore
+# Ignore everything by default
 /*
 
-# Allow
+# Allow root files and main directories
 !/CMakeLists.txt
 !/.gitignore
 !/assets/
@@ -9,3 +9,8 @@
 !/include/
 !/scripts/
 !/src/
+
+# Global ignores (inside folders)
+**/.DS_Store
+**/.vscode/
+

@@ -2,6 +2,7 @@
 #include "EnveloppesTransfer.hpp"
 #include "MenuBar.hpp"
 #include "EnveloppesUi.hpp"
+#include "History.hpp"
 #include "ImportExpenses.hpp"
 
 #include <QVBoxLayout>
@@ -18,11 +19,10 @@ MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
 	layout->addWidget(stack);
 
 	enveloppesUI = new EnveloppesUi(this);
-	stack->addWidget(enveloppesUI); // index 0
+	stack->addWidget(enveloppesUI);
 
-	// Add other pages here, e.g.
-	// summaryUI = new SummaryUI(this);
-	// stack->addWidget(summaryUI); // index 1
+	history = new History(this);
+	stack->addWidget(history);
 
 	stack->setCurrentIndex(0);
 
@@ -33,28 +33,37 @@ void MainView::handleMenuAction(int index)
 	switch(index)
 	{
 	case 0:
-		ImportExpenses::import(this);
-		enveloppesUI->showEnveloppes();
+		stack->setCurrentWidget(enveloppesUI);
 		break;
 
 	case 1:
-		EnveloppesTransfer::transfer(this);
-		enveloppesUI->showEnveloppes();
+		stack->setCurrentWidget(history);
 		break;
 
 	case 2:
-		enveloppesUI->addEnveloppe();
+		// Handle "stats" later
 		break;
 
 	case 3:
-		// Handle "Historique"
+		ImportExpenses::import(this);
+		enveloppesUI->showEnveloppes();
+		history->showHistory();
 		break;
 
 	case 4:
-		// Handle "Statistiques"
+		EnveloppesTransfer::transfer(this);
+		enveloppesUI->showEnveloppes();
+		history->showHistory();
+		break;
+
+	case 5:
+		enveloppesUI->addEnveloppe();
+		enveloppesUI->showEnveloppes();
+		history->showHistory();
 		break;
 
 	default:
 		break;
 	}
 }
+

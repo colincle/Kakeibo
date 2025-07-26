@@ -120,8 +120,9 @@ void EnveloppeManager::addTypeAndExpense(const std::string& name, const Expense&
 		}
 }
 
-void EnveloppeManager::addExpense(const Expense& e, Enveloppe& env)
+void EnveloppeManager::addExpense(Expense e, Enveloppe& env)
 {
+	e.enveloppe = env.getName();
 	env.addExpense(e.amount);
 	env.addToExpenseVector(e);
 	saveEnveloppesToJson();

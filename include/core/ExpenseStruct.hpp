@@ -11,6 +11,7 @@ struct Expense
 	std::chrono::year_month_day date;
 	int amount;
 	std::string info;
+	std::string enveloppe;
 };
 
 inline void to_json(json& j, const Expense& e)
@@ -34,7 +35,8 @@ inline void to_json(json& j, const Expense& e)
 	{
 		{ "date", dateStr },
 		{ "amount", e.amount },
-		{ "info", e.info }
+		{ "info", e.info },
+		{ "enveloppe", e.enveloppe }
 	};
 }
 
@@ -48,4 +50,5 @@ inline void from_json(const json& j, Expense& e)
 
 	e.amount = j.at("amount").get<int>();
 	e.info = j.at("info").get<std::string>();
+	e.enveloppe = j.at("enveloppe").get<std::string>();
 }

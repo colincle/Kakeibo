@@ -30,11 +30,12 @@ void	MenuBar::addButtons(QHBoxLayout* layout)
 {
 	QStringList labels =
 	{
+		"Enveloppes",
+		"Historique\n履歴",
+		"Statistiques\n統計",
 		"Importer des dépenses\n支出をインポートする",
 		"Transférer entre enveloppes\n封筒間で移動",
 		"Ajouter une enveloppe\n封筒を追加する",
-		"Historique\n履歴",
-		"Statistiques\n統計"
 	};
 
 	for(int i = 0; i < labels.size(); ++i)
