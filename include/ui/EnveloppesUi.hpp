@@ -2,59 +2,78 @@
 
 #include "Enveloppe.hpp"
 
+#include <QList>
+#include <QString>
 #include <QWidget>
 
-class QGridLayout;
-class QLineEdit;
 class QCheckBox;
+class QDialog;
 class QFormLayout;
-class QTimer;
+class QGridLayout;
 class QLabel;
+class QLineEdit;
+class QPushButton;
 class QScrollArea;
-class QString;
+class QTimer;
+class QVBoxLayout;
 
 class EnveloppesUi : public QWidget
 {
 	Q_OBJECT
 
-signals:
+  signals:
 	void updateNeeded();
 
-public:
-	EnveloppesUi(QWidget* parent = nullptr);
+  public:
+	explicit EnveloppesUi(QWidget *parent = nullptr);
 	void showEnveloppes();
+	void addEnveloppe(std::string name);
 
-	void addEnveloppe();
+  protected:
+	void resizeEvent(QResizeEvent *event) override;
 
-protected:
-	void resizeEvent(QResizeEvent* event) override;
-
-private:
+  private:
 	struct EnveloppeFormFields
 	{
-		QLineEdit* nameFrInput = nullptr;
-		QLineEdit* nameJpInput = nullptr;
-		QLineEdit* nameInput = nullptr;
-		QLineEdit* amountInput = nullptr;
-		QLineEdit* maxAmountInput = nullptr;
-		QLineEdit* goalInput = nullptr;
-		QCheckBox* savingsCheck = nullptr;
+		QLineEdit *nameFrInput    = nullptr;
+		QLineEdit *nameJpInput    = nullptr;
+		QLineEdit *nameInput      = nullptr;
+		QLineEdit *amountInput    = nullptr;
+		QLineEdit *maxAmountInput = nullptr;
+		QLineEdit *goalInput      = nullptr;
+		QCheckBox *savingsCheck   = nullptr;
 	};
 
-	QGridLayout* gridLayout = nullptr;
-	QTimer* resizeDebounceTimer = nullptr;
-	QScrollArea* scrollArea = nullptr;
-	QWidget* scrollContent = nullptr;
+	QGridLayout *gridLayout          = nullptr;
+	QTimer      *resizeDebounceTimer = nullptr;
+	QScrollArea *scrollArea          = nullptr;
+	QWidget     *scrollContent       = nullptr;
 
-	void clearEnveloppes();
-	void addDialogButtons(QDialog* dialog, QFormLayout* layout);
-	void handleEnveloppeSubmission(const EnveloppeFormFields& f);
-	void createFields(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f);
-	QWidget* createCard(const Enveloppe& env);
-	QWidget* createProgressLabel(QString barColor, int percent);
-	QWidget* createGoalMaxLabel(const Enveloppe& env);
-	QString getProgressBarColor(int percent);
-	QWidget* createCardButtons(const Enveloppe& env);
-	QScrollArea* createScrollArea(QWidget* content);
+	void clearGrid();
+	int  computeColumnCount() const;
+	void populateGrid(int columnCount);
+	void restoreScroll(int savedScroll);
+
+	QWidget             *createCard(const Enveloppe &env);
+	QVBoxLayout         *setupCardLayout(QWidget *card);
+	void                 addCardContent(QVBoxLayout *layout, const Enveloppe &env, const QString &barColor, int percent);
+	QWidget             *createCardButtons(const Enveloppe &env);
+	QList<QPushButton *> createCardButtonList();
+	void                 connectCardButtons(const Enveloppe &env, const QList<QPushButton *> &buttons);
+	QWidget             *createProgressLabel(QString barColor, int percent);
+	QWidget             *createGoalMaxLabel(const Enveloppe &env);
+	QString              getProgressBarColor(int percent, const Enveloppe &env);
+
 	void deleteEnveloppe(Enveloppe env);
+	void showNonEmptyWarning();
+	bool confirmDeletion();
+	void addDialogButtons(QDialog *dialog, QFormLayout *layout);
+	void handleEnveloppeSubmission(const EnveloppeFormFields &f, std::string name);
+	void createFields(QDialog *dialog, QFormLayout *layout, EnveloppeFormFields &f);
+	void setupEnveloppeDialog(QDialog &dialog);
+	void preFillFieldsFromName(const std::string &name, EnveloppeFormFields &fields);
+
+	QScrollArea *createScrollArea(QWidget *content);
+	void         clearEnveloppes();
+	QString      dialogStyleSheet();
 };

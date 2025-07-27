@@ -1,0 +1,31 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInContainerLiterals: false
+SpaceAfterCStyleCast: true
+SpaceBeforeCpp11BracedList: true
+
+SpacesInConditionalStatement: true
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+AlwaysBreakBeforeMultilineStrings: false
+BreakConstructorInitializers: BeforeColon
+BreakBeforeBinaryOperators: None
+
+AllowShortCaseLabelsOnASingleLine: false
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+
+ReflowComments: false
+ColumnLimit: 0
+PenaltyExcessCharacter: 0

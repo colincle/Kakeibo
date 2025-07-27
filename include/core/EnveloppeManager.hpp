@@ -1,31 +1,30 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 #include "Enveloppe.hpp"
 
 class EnveloppeManager
 {
-public:
-
+  public:
 	EnveloppeManager();
 
-	std::vector<Enveloppe>& getEnveloppes() { return enveloppes; }
+	std::vector<Enveloppe> &getEnveloppes() { return enveloppes; }
 
-	void addEnveloppe(const std::string& name, int amount, int maxAmount, int goal, bool savings);
+	void addEnveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings);
+	void modifyEnveloppe(const std::string &oldName, const std::string &name, int amount, int maxAmount, int goal, bool savings);
 	void transfer(std::string from, std::string to, int amount);
-	void addTypeAndExpense(const std::string& name, const Expense& e);
-	void addExpense(Expense e, Enveloppe& env);
-	void moveEnveloppe(const std::string& name, bool up);
-	void deleteEnveloppe(const std::string& name);
+	void addTypeAndExpense(const std::string &name, const Expense &e);
+	void addExpense(Expense e, Enveloppe &env);
+	void moveEnveloppe(const std::string &name, bool up);
+	void deleteEnveloppe(const std::string &name);
 
-private:
-
+  private:
 	std::vector<Enveloppe> enveloppes;
-	std::filesystem::path basePath;
-	std::filesystem::path enveloppesPath;
+	std::filesystem::path  basePath;
+	std::filesystem::path  enveloppesPath;
 
 	void createPaths();
 	void getEnveloppesFromJson();

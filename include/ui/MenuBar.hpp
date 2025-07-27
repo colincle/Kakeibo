@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QWidget>
 #include <QVector>
+#include <QWidget>
 
 class QHBoxLayout;
 class QLabel;
@@ -10,20 +10,21 @@ class QPushButton;
 class MenuBar : public QWidget
 {
 	Q_OBJECT
-
-public:
-	explicit MenuBar(QWidget* parent = nullptr);
-
-signals:
+  signals:
 	void menuButtonClicked(int index);
 
-private:
-	QVector<QPushButton*> buttons;
-	QLabel* totalLabel = nullptr;
+  public:
+	explicit MenuBar(QWidget *parent = nullptr);
+
+	void updateTotalLabel();
+
+  private:
+	QVector<QPushButton *> buttons;
+	QLabel                *totalLabel = nullptr;
 
 	void setStyle();
-	void addPagesButtons(QHBoxLayout* layout);
-	void addActionsButtons(QHBoxLayout* layout);
+	void addPagesButtons(QHBoxLayout *layout);
+	void addActionsButtons(QHBoxLayout *layout);
 	void setActiveButton(int index);
-	void createTotalLabel(QHBoxLayout* layout);
+	void createTotalLabel(QHBoxLayout *layout);
 };

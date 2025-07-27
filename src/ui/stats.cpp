@@ -1,27 +1,27 @@
 #include "Stats.hpp"
-#include "Globals.hpp"
 #include "Assets.hpp"
+#include "Globals.hpp"
 
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QAbstractItemView>
 #include <QComboBox>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QHeaderView>
 #include <QLabel>
+#include <QLocale>
+#include <QMetaType>
 #include <QScrollArea>
 #include <QTableWidget>
-#include <QHeaderView>
 #include <QTimer>
-#include <QLocale>
+#include <QVBoxLayout>
 #include <QVariant>
-#include <QMetaType>
-#include <QFrame>
-#include <QAbstractItemView>
 
 #include <algorithm>
+#include <format>
 #include <optional>
 #include <ranges>
-#include <format>
 
-Stats::Stats(QWidget* parent) : QWidget(parent)
+Stats::Stats(QWidget *parent) : QWidget(parent)
 {
 	mainLayout = new QVBoxLayout(this);
 	mainLayout->setAlignment(Qt::AlignTop);
@@ -39,14 +39,14 @@ void Stats::showStats()
 {
 	updateGlobalDateRange();
 
-	if(topBarContainer)
+	if ( topBarContainer )
 	{
 		mainLayout->removeWidget(topBarContainer);
 		delete topBarContainer;
 		topBarContainer = nullptr;
 	}
 
-	if(tableContainer)
+	if ( tableContainer )
 	{
 		scrollArea->takeWidget();
 		delete tableContainer;
@@ -54,25 +54,25 @@ void Stats::showStats()
 	}
 
 	topBarContainer = new QWidget(this);
-	topBar = new QHBoxLayout(topBarContainer);
+	topBar          = new QHBoxLayout(topBarContainer);
 	topBar->setAlignment(Qt::AlignLeft);
 	topBar->addLayout(createDateDropdowns());
 	mainLayout->insertWidget(0, topBarContainer);
 
-	tableContainer = new QWidget;
-	QVBoxLayout* tableLayout = new QVBoxLayout(tableContainer);
+	tableContainer           = new QWidget;
+	QVBoxLayout *tableLayout = new QVBoxLayout(tableContainer);
 
-	QTableWidget* table = new QTableWidget(tableContainer);
+	QTableWidget *table = new QTableWidget(tableContainer);
 	setUpTable(table);
 	tableLayout->addWidget(table);
 
 	scrollArea->setWidget(tableContainer);
 }
 
-void Stats::setUpTable(QTableWidget* table)
+void Stats::setUpTable(QTableWidget *table)
 {
 	table->setColumnCount(3);
-	table->setHorizontalHeaderLabels({ "Enveloppe 封筒", "Par mois 月額", "Par année 年額" });
+	table->setHorizontalHeaderLabels({"Enveloppe 封筒", "Par mois 月額", "Par année 年額"});
 	table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	table->horizontalHeader()->setStretchLastSection(true);
@@ -85,28 +85,28 @@ void Stats::setUpTable(QTableWidget* table)
 	table->setStyleSheet(setTableStyleSheet());
 }
 
-void Stats::populateTable(QTableWidget* table)
+void Stats::populateTable(QTableWidget *table)
 {
-	if(!table)
+	if ( !table )
 		return;
 
-	for(const auto& env : g_enveloppeManager.getEnveloppes())
+	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
 	{
 		auto [total, perMonthAvg, perYearAvg] = calculateExpenseStats(env);
 
-		if(total == 0)
+		if ( total == 0 )
 			continue;
 
 		int row = table->rowCount();
 		table->insertRow(row);
 		table->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(env.getName()).replace('\n', ' ')));
 		QLocale jp(QLocale::Japanese, QLocale::Japan);
-		auto* perMonthItem = new QTableWidgetItem("¥" + jp.toString(perMonthAvg));
+		auto   *perMonthItem = new QTableWidgetItem("¥" + jp.toString(perMonthAvg));
 		table->setItem(row, 1, perMonthItem);
 
-		if(perYearAvg != -1)
+		if ( perYearAvg != -1 )
 		{
-			auto* perYearItem = new QTableWidgetItem("¥" + jp.toString(perYearAvg));
+			auto *perYearItem = new QTableWidgetItem("¥" + jp.toString(perYearAvg));
 			table->setItem(row, 2, perYearItem);
 		}
 		else
@@ -156,23 +156,23 @@ QString Stats::setTableStyleSheet()
 	       )";
 }
 
-QHBoxLayout* Stats::createDateDropdowns()
+QHBoxLayout *Stats::createDateDropdowns()
 {
 	static bool registered = []
 	{
 		qRegisterMetaType<std::chrono::year_month>("std::chrono::year_month");
 		return true;
 	}();
-	(void)registered;
+	(void) registered;
 
 	setupDateWidgets();
 	initAndFillCombos();
 	connectDateSignals();
 
-	QHBoxLayout* layout = new QHBoxLayout();
-	QLabel* startLabel = new QLabel("Début 開始:", this);
+	QHBoxLayout *layout     = new QHBoxLayout();
+	QLabel      *startLabel = new QLabel("Début 開始:", this);
 	startLabel->setStyleSheet("color: #E1E1E2;");
-	QLabel* endLabel = new QLabel("Fin 終了:", this);
+	QLabel *endLabel = new QLabel("Fin 終了:", this);
 	endLabel->setStyleSheet("color: #E1E1E2;");
 
 	layout->addSpacing(20);
@@ -196,43 +196,41 @@ void Stats::setupDateWidgets()
 
 void Stats::initAndFillCombos()
 {
-	if(startDate == std::chrono::year_month{})
+	if ( startDate == std::chrono::year_month {} )
 		startDate = globalStartDate;
 
-	if(endDate == std::chrono::year_month{})
+	if ( endDate == std::chrono::year_month {} )
 		endDate = globalEndDate;
 
-	for(auto ym = globalStartDate; ym <= globalEndDate; ym += std::chrono::months{1})
+	for ( auto ym = globalStartDate; ym <= globalEndDate; ym += std::chrono::months {1} )
 	{
-		QString label = QString::number(unsigned(ym.month())) + "/" + QString::number(int(ym.year()));
-		QVariant data = QVariant::fromValue(ym);
+		QString  label = QString::number(unsigned(ym.month())) + "/" + QString::number(int(ym.year()));
+		QVariant data  = QVariant::fromValue(ym);
 		startCombo->addItem(label, data);
 		endCombo->addItem(label, data);
 	}
 
 	int startIdx = startCombo->findData(QVariant::fromValue(startDate));
 
-	if(startIdx != -1)
+	if ( startIdx != -1 )
 		startCombo->setCurrentIndex(startIdx);
 
 	int endIdx = endCombo->findData(QVariant::fromValue(endDate));
 
-	if(endIdx != -1)
+	if ( endIdx != -1 )
 		endCombo->setCurrentIndex(endIdx);
 }
 
 void Stats::connectDateSignals()
 {
 	connect(startCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-	{
+	        {
 		startDate = startCombo->itemData(index).value<std::chrono::year_month>();
-		QTimer::singleShot(0, this, &Stats::showStats);
-	});
+		QTimer::singleShot(0, this, &Stats::showStats); });
 	connect(endCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-	{
+	        {
 		endDate = endCombo->itemData(index).value<std::chrono::year_month>();
-		QTimer::singleShot(0, this, &Stats::showStats);
-	});
+		QTimer::singleShot(0, this, &Stats::showStats); });
 }
 
 QString Stats::setUpComboStyleSheet()
@@ -259,76 +257,77 @@ QString Stats::setUpComboStyleSheet()
 				width: 12px;
 				height: 12px;
 			}
-		)").arg(DOWN_ICON);
+		)")
+	    .arg(DOWN_ICON);
 }
 
 void Stats::updateGlobalDateRange()
 {
-	static bool firstTime = true;
+	static bool                          firstTime = true;
 	std::optional<std::chrono::sys_days> minDate, maxDate;
 
-	for(const auto& env : g_enveloppeManager.getEnveloppes())
+	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
 	{
-		for(const auto& exp : env.getExpenses())
+		for ( const auto &exp : env.getExpenses() )
 		{
-			if(!minDate || exp.date < *minDate)
+			if ( !minDate || exp.date < *minDate )
 				minDate = exp.date;
 
-			if(!maxDate || exp.date > *maxDate)
+			if ( !maxDate || exp.date > *maxDate )
 				maxDate = exp.date;
 		}
 	}
 
-	if(minDate && maxDate)
+	if ( minDate && maxDate )
 	{
-		auto ymdMin = std::chrono::year_month_day{*minDate};
-		globalStartDate = std::chrono::year_month{ymdMin.year(), ymdMin.month()};
+		auto ymdMin     = std::chrono::year_month_day {*minDate};
+		globalStartDate = std::chrono::year_month {ymdMin.year(), ymdMin.month()};
 
-		auto ymdMax = std::chrono::year_month_day{*maxDate};
-		globalEndDate = std::chrono::year_month{ymdMax.year(), ymdMax.month()};
+		auto ymdMax   = std::chrono::year_month_day {*maxDate};
+		globalEndDate = std::chrono::year_month {ymdMax.year(), ymdMax.month()};
 
-		if(firstTime)
+		if ( firstTime )
 		{
 			startDate = globalStartDate;
-			endDate = globalEndDate;
+			endDate   = globalEndDate;
 			firstTime = false;
 		}
 	}
 }
 
-std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe& env)
+std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe &env)
 {
-	int total = 0;
+	int                                     total = 0;
 	std::map<std::pair<int, unsigned>, int> perMonth;
 
-	for(const auto& exp : env.getExpenses())
+	for ( const auto &exp : env.getExpenses() )
 	{
-		auto ym = std::chrono::year_month{ exp.date.year(), exp.date.month() };
+		auto ym = std::chrono::year_month {exp.date.year(), exp.date.month()};
 
-		if(ym < startDate || ym > endDate)
+		if ( ym < startDate || ym > endDate )
 			continue;
 
 		total += exp.amount;
-		perMonth[ { int(exp.date.year()), unsigned(exp.date.month()) }] += exp.amount;
+		perMonth[{int(exp.date.year()), unsigned(exp.date.month())}] += exp.amount;
 	}
 
-	int monthCount = static_cast<int>(perMonth.size());
+	int monthCount  = static_cast<int>(perMonth.size());
 	int perMonthAvg = monthCount ? total / monthCount : 0;
-	int perYearAvg = monthCount >= 12 ? (total * 12) / monthCount : -1;
+	int perYearAvg  = monthCount >= 12 ? (total * 12) / monthCount : -1;
 
-	return { total, perMonthAvg, perYearAvg };
+	return {total, perMonthAvg, perYearAvg};
 }
 
 void Stats::clearStatsPage()
 {
-	if(topBarContainer)
+	if ( topBarContainer )
 	{
 		mainLayout->removeWidget(topBarContainer);
 		delete topBarContainer;
 		topBarContainer = nullptr;
 	}
 
-	if(scrollArea)
+	if ( scrollArea )
 	{
 		mainLayout->removeWidget(scrollArea);
 		delete scrollArea;

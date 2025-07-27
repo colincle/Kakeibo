@@ -1,8 +1,8 @@
 #include "ImportExpenses.hpp"
+#include "Assets.hpp"
+#include "Enveloppe.hpp"
 #include "Globals.hpp"
 #include "Parser.hpp"
-#include "Enveloppe.hpp"
-#include "Assets.hpp"
 
 #include <QComboBox>
 #include <QDate>
@@ -10,60 +10,58 @@
 #include <QDialogButtonBox>
 #include <QInputDialog>
 #include <QLabel>
+#include <QLocale>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QLocale>
 
 #include <chrono>
 #include <string>
 #include <vector>
 
-void ImportExpenses::import(QWidget* parent)
+void ImportExpenses::import(QWidget *parent)
 {
 	auto [yearInt, data] = showImportDialog(parent);
 
-	if(yearInt < 0 || data.empty())
+	if ( yearInt < 0 || data.empty() )
 		return;
 
-	std::chrono::year year{yearInt};
+	std::chrono::year    year {yearInt};
 	std::vector<Expense> expenses = Parser::parseExpenses(data, year);
 
-	for(const Expense& e : expenses)
+	for ( const Expense &e : expenses )
 		addExpense(parent, e);
 }
 
-std::pair<int, std::string> ImportExpenses::showImportDialog(QWidget* parent)
+std::pair<int, std::string> ImportExpenses::showImportDialog(QWidget *parent)
 {
 	QDialog dialog(parent);
 	dialog.setStyleSheet(setDialogStyleSheet());
 
-	QVBoxLayout* layout = new QVBoxLayout(&dialog);
+	QVBoxLayout *layout = new QVBoxLayout(&dialog);
 
-	QComboBox* yearCombo = createYearSelector(&dialog, layout);
-	QPlainTextEdit* inputField = createTextInput(&dialog, layout);
+	QComboBox      *yearCombo  = createYearSelector(&dialog, layout);
+	QPlainTextEdit *inputField = createTextInput(&dialog, layout);
 	addDialogButtons(&dialog, layout);
 
-	if(dialog.exec() != QDialog::Accepted)
-		return { -1, "" };
+	if ( dialog.exec() != QDialog::Accepted )
+		return {-1, ""};
 
-	return
-	{
-		yearCombo->currentText().toInt(),
-		inputField->toPlainText().toStdString()
-	};
+	return {
+	    yearCombo->currentText().toInt(),
+	    inputField->toPlainText().toStdString()};
 }
 
-QComboBox* ImportExpenses::createYearSelector(QWidget* parent, QVBoxLayout* layout)
+QComboBox *ImportExpenses::createYearSelector(QWidget *parent, QVBoxLayout *layout)
 {
 	auto label = new QLabel("Année\n年 :", parent);
 	layout->addWidget(label);
 
-	QComboBox* combo = new QComboBox(parent);
+	QComboBox *combo = new QComboBox(parent);
 
-	for(int y = 1900; y <= 2100; ++y)
+	for ( int y = 1900; y <= 2100; ++y )
 		combo->addItem(QString::number(y));
 
 	combo->setCurrentText(QString::number(QDate::currentDate().year()));
@@ -71,21 +69,21 @@ QComboBox* ImportExpenses::createYearSelector(QWidget* parent, QVBoxLayout* layo
 	return combo;
 }
 
-QPlainTextEdit* ImportExpenses::createTextInput(QWidget* parent, QVBoxLayout* layout)
+QPlainTextEdit *ImportExpenses::createTextInput(QWidget *parent, QVBoxLayout *layout)
 {
 	auto label = new QLabel("Données\nデータ :", parent);
 	layout->addWidget(label);
 
-	QPlainTextEdit* input = new QPlainTextEdit(parent);
+	QPlainTextEdit *input = new QPlainTextEdit(parent);
 	input->setPlaceholderText("Collez les données de dépenses\n支出データを貼り付けてください");
 	input->setMinimumHeight(300);
 	layout->addWidget(input);
 	return input;
 }
 
-void ImportExpenses::addDialogButtons(QDialog* dialog, QVBoxLayout* layout)
+void ImportExpenses::addDialogButtons(QDialog *dialog, QVBoxLayout *layout)
 {
-	QDialogButtonBox* buttons = new QDialogButtonBox(dialog);
+	QDialogButtonBox *buttons = new QDialogButtonBox(dialog);
 	buttons->addButton(new QPushButton("OK", dialog), QDialogButtonBox::AcceptRole);
 	buttons->addButton(new QPushButton("Annuler キャンセル", dialog), QDialogButtonBox::RejectRole);
 	layout->addWidget(buttons);
@@ -167,19 +165,20 @@ QString ImportExpenses::setDialogStyleSheet()
 		QPushButton:disabled {
 			color: gray;
 		}
-	)").arg(DOWN_ICON);
+	)")
+	    .arg(DOWN_ICON);
 }
 
-void ImportExpenses::addExpense(QWidget* parent, const Expense& e)
+void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 {
-	auto& enveloppes = g_enveloppeManager.getEnveloppes();
-	bool matched = false;
+	auto &enveloppes = g_enveloppeManager.getEnveloppes();
+	bool  matched    = false;
 
-	for(auto& env : enveloppes)
+	for ( auto &env : enveloppes )
 	{
-		for(const std::string& type : env.getTypes())
+		for ( const std::string &type : env.getTypes() )
 		{
-			if(e.info == type)
+			if ( e.info == type )
 			{
 				g_enveloppeManager.addExpense(e, env);
 				matched = true;
@@ -187,25 +186,25 @@ void ImportExpenses::addExpense(QWidget* parent, const Expense& e)
 			}
 		}
 
-		if(matched)
+		if ( matched )
 			break;
 	}
 
-	if(!matched)
+	if ( !matched )
 		g_enveloppeManager.addTypeAndExpense(selectEnveloppeDialog(parent, enveloppes, e), e);
 }
 
-std::string ImportExpenses::selectEnveloppeDialog(QWidget* parent, const std::vector<Enveloppe>& enveloppes, const Expense& e)
+std::string ImportExpenses::selectEnveloppeDialog(QWidget *parent, const std::vector<Enveloppe> &enveloppes, const Expense &e)
 {
 	QStringList names;
 
-	for(const auto& env : enveloppes)
+	for ( const auto &env : enveloppes )
 		names << QString::fromStdString(env.getName());
 
 	QString selected;
 	QString label = buildDialogLabel(e);
 
-	while(selected.isEmpty())
+	while ( selected.isEmpty() )
 	{
 		QInputDialog dialog(parent, Qt::WindowFlags());
 		dialog.setOption(QInputDialog::NoButtons);
@@ -215,44 +214,44 @@ std::string ImportExpenses::selectEnveloppeDialog(QWidget* parent, const std::ve
 		dialog.setOption(QInputDialog::UseListViewForComboBoxItems);
 		dialog.setStyleSheet(setDialogStyleSheet());
 
-		QDialogButtonBox* buttons = createDialogButtons(&dialog);
-		QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(dialog.layout());
+		QDialogButtonBox *buttons = createDialogButtons(&dialog);
+		QVBoxLayout      *layout  = qobject_cast<QVBoxLayout *>(dialog.layout());
 
-		if(layout)
+		if ( layout )
 			layout->addWidget(buttons);
 
 		QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
 		QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
-		if(dialog.exec() == QDialog::Accepted)
+		if ( dialog.exec() == QDialog::Accepted )
 			selected = dialog.textValue();
 	}
 
 	return selected.toStdString();
 }
 
-QString ImportExpenses::buildDialogLabel(const Expense& e)
+QString ImportExpenses::buildDialogLabel(const Expense &e)
 {
 	QString dateStr = QString("%1-%2-%3")
-	                  .arg(int(e.date.year()))
-	                  .arg(unsigned(e.date.month()), 2, 10, QChar('0'))
-	                  .arg(unsigned(e.date.day()), 2, 10, QChar('0'));
+	                      .arg(int(e.date.year()))
+	                      .arg(unsigned(e.date.month()), 2, 10, QChar('0'))
+	                      .arg(unsigned(e.date.day()), 2, 10, QChar('0'));
 
-	double amountValue = static_cast<double>(e.amount);
-	QString number = QLocale(QLocale::Japanese, QLocale::Japan).toString(qAbs(amountValue));
-	QString amountStr = e.amount < 0 ? QString("¥-%1").arg(number) : QString("¥%1").arg(number);
+	double  amountValue = static_cast<double>(e.amount);
+	QString number      = QLocale(QLocale::Japanese, QLocale::Japan).toString(qAbs(amountValue));
+	QString amountStr   = e.amount < 0 ? QString("¥-%1").arg(number) : QString("¥%1").arg(number);
 
 	return QString("%1\n%2\n%3")
-	       .arg(dateStr)
-	       .arg(amountStr)
-	       .arg(QString::fromStdString(e.info));
+	    .arg(dateStr)
+	    .arg(amountStr)
+	    .arg(QString::fromStdString(e.info));
 }
 
-QDialogButtonBox* ImportExpenses::createDialogButtons(QDialog* parent)
+QDialogButtonBox *ImportExpenses::createDialogButtons(QDialog *parent)
 {
-	auto* box = new QDialogButtonBox(parent);
-	auto* ok = new QPushButton("OK", parent);
-	auto* cancel = new QPushButton("Annuler キャンセル", parent);
+	auto *box    = new QDialogButtonBox(parent);
+	auto *ok     = new QPushButton("OK", parent);
+	auto *cancel = new QPushButton("Annuler キャンセル", parent);
 	box->addButton(ok, QDialogButtonBox::AcceptRole);
 	box->addButton(cancel, QDialogButtonBox::RejectRole);
 

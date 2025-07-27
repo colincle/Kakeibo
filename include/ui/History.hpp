@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QWidget>
 #include <QString>
-#include <string>
+#include <QWidget>
 #include <chrono>
+#include <string>
 #include <vector>
 
 class QHBoxLayout;
@@ -19,11 +19,11 @@ class History : public QWidget
 {
 	Q_OBJECT
 
-public:
-	explicit History(QWidget* parent = nullptr);
+  public:
+	explicit History(QWidget *parent = nullptr);
 	void showHistory();
 
-private:
+  private:
 	std::chrono::year_month globalStartDate;
 	std::chrono::year_month globalEndDate;
 	std::chrono::year_month startDate;
@@ -31,29 +31,29 @@ private:
 
 	std::string selected;
 
-	QComboBox* enveloppeCombo;
-	QComboBox* startCombo;
-	QComboBox* endCombo;
-	QVBoxLayout* mainLayout;
-	QHBoxLayout* topBar;
-	QWidget* topBarContainer = nullptr;
-	QScrollArea* scrollArea = nullptr;
-	QWidget* tableContainer = nullptr;
+	QComboBox   *enveloppeCombo;
+	QComboBox   *startCombo;
+	QComboBox   *endCombo;
+	QVBoxLayout *mainLayout;
+	QHBoxLayout *topBar;
+	QWidget     *topBarContainer = nullptr;
+	QScrollArea *scrollArea      = nullptr;
+	QWidget     *tableContainer  = nullptr;
 
-	void updateGlobalDateRange();
-	void clearTopBarContainer();
-	void clearHistoryPage();
-	void populateTable(QTableWidget* table);
+	void                 updateGlobalDateRange();
+	void                 clearTopBarContainer();
+	void                 clearHistoryPage();
+	void                 populateTable(QTableWidget *table);
 	std::vector<Expense> collectFilteredExpenses();
-	void fillTableWithExpenses(QTableWidget* table, const std::vector<Expense>& expenses);
+	void                 fillTableWithExpenses(QTableWidget *table, const std::vector<Expense> &expenses);
 
-	void setUpTable(QTableWidget* table);
+	void    setUpTable(QTableWidget *table);
 	QString setTableStyleSheet();
 
-	QHBoxLayout* createEnveloppeDropdown();
-	QHBoxLayout* createDateDropdowns();
-	QString setUpComboStyleSheet();
-	void setupDateDropdownWidgets();
-	void initDateCombos();
-	void connectDateComboSignals();
+	QHBoxLayout *createEnveloppeDropdown();
+	QHBoxLayout *createDateDropdowns();
+	QString      setUpComboStyleSheet();
+	void         setupDateDropdownWidgets();
+	void         initDateCombos();
+	void         connectDateComboSignals();
 };

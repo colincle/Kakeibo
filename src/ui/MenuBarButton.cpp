@@ -3,8 +3,8 @@
 #include <QSizePolicy>
 #include <QString>
 
-MenuBarButton::MenuBarButton(const QString& text, QWidget* parent)
-	: QPushButton(text, parent)
+MenuBarButton::MenuBarButton(const QString &text, QWidget *parent)
+    : QPushButton(text, parent)
 {
 	setProperty("active", false);
 	setFlat(true);

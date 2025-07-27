@@ -28,3 +28,13 @@ find "$DIR" -type f \( -iname \*.cpp -o -iname \*.hpp \) -exec astyle --style=al
 find "$DIR" -type f -iname "*.orig" -exec mv {} "$DIR/orig" \;
 
 echo "Formatting completed and backup files moved to the 'orig' folder."
+
+clang-format --style=file --assume-filename="$DIR/.clang-format" -i "{}"
+
+DIR=$(dirname "$0")
+
+for d in "$DIR"/../src "$DIR"/../include; do
+	find "$d" -type f \( -iname "*.cpp" -o -iname "*.hpp" \) -print -exec clang-format -i {} \;
+done
+
+echo "Formatting completed with clang-format."

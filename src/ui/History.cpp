@@ -1,27 +1,27 @@
 #include "History.hpp"
-#include "Globals.hpp"
 #include "Assets.hpp"
+#include "Globals.hpp"
 
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QAbstractItemView>
 #include <QComboBox>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QHeaderView>
 #include <QLabel>
+#include <QMetaType>
 #include <QScrollArea>
 #include <QTableWidget>
-#include <QHeaderView>
 #include <QTimer>
+#include <QVBoxLayout>
 #include <QVariant>
-#include <QMetaType>
-#include <QFrame>
-#include <QAbstractItemView>
 
 #include <algorithm>
+#include <format>
 #include <optional>
 #include <ranges>
 #include <string>
-#include <format>
 
-History::History(QWidget* parent) : QWidget(parent)
+History::History(QWidget *parent) : QWidget(parent)
 {
 	mainLayout = new QVBoxLayout(this);
 	mainLayout->setAlignment(Qt::AlignTop);
@@ -43,16 +43,16 @@ void History::showHistory()
 	clearTopBarContainer();
 
 	topBarContainer = new QWidget(this);
-	topBar = new QHBoxLayout(topBarContainer);
+	topBar          = new QHBoxLayout(topBarContainer);
 	topBar->setAlignment(Qt::AlignLeft);
 	topBar->addLayout(createEnveloppeDropdown());
 	topBar->addLayout(createDateDropdowns());
 	mainLayout->insertWidget(0, topBarContainer);
 
-	tableContainer = new QWidget;
-	QVBoxLayout* tableLayout = new QVBoxLayout(tableContainer);
+	tableContainer           = new QWidget;
+	QVBoxLayout *tableLayout = new QVBoxLayout(tableContainer);
 
-	QTableWidget* table = new QTableWidget(tableContainer);
+	QTableWidget *table = new QTableWidget(tableContainer);
 	setUpTable(table);
 	populateTable(table);
 	table->resizeColumnsToContents();
@@ -63,14 +63,14 @@ void History::showHistory()
 
 void History::clearTopBarContainer()
 {
-	if(topBarContainer)
+	if ( topBarContainer )
 	{
 		mainLayout->removeWidget(topBarContainer);
 		delete topBarContainer;
 		topBarContainer = nullptr;
 	}
 
-	if(tableContainer)
+	if ( tableContainer )
 	{
 		scrollArea->takeWidget();
 		delete tableContainer;
@@ -80,14 +80,14 @@ void History::clearTopBarContainer()
 
 void History::clearHistoryPage()
 {
-	if(topBarContainer)
+	if ( topBarContainer )
 	{
 		mainLayout->removeWidget(topBarContainer);
 		delete topBarContainer;
 		topBarContainer = nullptr;
 	}
 
-	if(scrollArea)
+	if ( scrollArea )
 	{
 		mainLayout->removeWidget(scrollArea);
 		delete scrollArea;
@@ -95,10 +95,10 @@ void History::clearHistoryPage()
 	}
 }
 
-void History::setUpTable(QTableWidget* table)
+void History::setUpTable(QTableWidget *table)
 {
 	table->setColumnCount(4);
-	table->setHorizontalHeaderLabels({ "Date 日付", "Montant 金額", "Enveloppe 封筒", "Description 説明" });
+	table->setHorizontalHeaderLabels({"Date 日付", "Montant 金額", "Enveloppe 封筒", "Description 説明"});
 	table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	table->horizontalHeader()->setStretchLastSection(true);
@@ -157,16 +157,14 @@ QString History::setTableStyleSheet()
 	       )";
 }
 
-void History::populateTable(QTableWidget* table)
+void History::populateTable(QTableWidget *table)
 {
-	if(!table)
+	if ( !table )
 		return;
 
 	std::vector<Expense> displayList = collectFilteredExpenses();
-	std::ranges::sort(displayList, [](const Expense & a, const Expense & b)
-	{
-		return a.date > b.date;
-	});
+	std::ranges::sort(displayList, [](const Expense &a, const Expense &b)
+	                  { return a.date > b.date; });
 
 	fillTableWithExpenses(table, displayList);
 }
@@ -175,16 +173,16 @@ std::vector<Expense> History::collectFilteredExpenses()
 {
 	std::vector<Expense> result;
 
-	for(const auto& env : g_enveloppeManager.getEnveloppes())
+	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
 	{
-		if(selected != "Tous すべて" && env.getName() != selected)
+		if ( selected != "Tous すべて" && env.getName() != selected )
 			continue;
 
-		for(const auto& exp : env.getExpenses())
+		for ( const auto &exp : env.getExpenses() )
 		{
-			auto ym = std::chrono::year_month{ exp.date.year(), exp.date.month() };
+			auto ym = std::chrono::year_month {exp.date.year(), exp.date.month()};
 
-			if(ym < startDate || ym > endDate)
+			if ( ym < startDate || ym > endDate )
 				continue;
 
 			result.push_back(exp);
@@ -194,18 +192,18 @@ std::vector<Expense> History::collectFilteredExpenses()
 	return result;
 }
 
-void History::fillTableWithExpenses(QTableWidget* table, const std::vector<Expense>& expenses)
+void History::fillTableWithExpenses(QTableWidget *table, const std::vector<Expense> &expenses)
 {
 	QLocale jp(QLocale::Japanese, QLocale::Japan);
 
-	for(const auto& exp : expenses)
+	for ( const auto &exp : expenses )
 	{
 		int row = table->rowCount();
 		table->insertRow(row);
 
 		table->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(std::format("{}", exp.date))));
 
-		auto* amountItem = new QTableWidgetItem(QString("¥%1").arg(jp.toString(exp.amount)));
+		auto *amountItem = new QTableWidgetItem(QString("¥%1").arg(jp.toString(exp.amount)));
 		amountItem->setForeground(QBrush(QColor(exp.amount < 0 ? "#FA5E57" : "#337BFF")));
 		table->setItem(row, 1, amountItem);
 
@@ -217,43 +215,43 @@ void History::fillTableWithExpenses(QTableWidget* table, const std::vector<Expen
 
 void History::updateGlobalDateRange()
 {
-	static bool firstTime = true;
+	static bool                          firstTime = true;
 	std::optional<std::chrono::sys_days> minDate, maxDate;
 
-	for(const auto& env : g_enveloppeManager.getEnveloppes())
+	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
 	{
-		for(const auto& exp : env.getExpenses())
+		for ( const auto &exp : env.getExpenses() )
 		{
-			if(!minDate || exp.date < *minDate)
+			if ( !minDate || exp.date < *minDate )
 				minDate = exp.date;
 
-			if(!maxDate || exp.date > *maxDate)
+			if ( !maxDate || exp.date > *maxDate )
 				maxDate = exp.date;
 		}
 	}
 
-	if(minDate && maxDate)
+	if ( minDate && maxDate )
 	{
-		auto ymdMin = std::chrono::year_month_day{*minDate};
-		globalStartDate = std::chrono::year_month{ymdMin.year(), ymdMin.month()};
+		auto ymdMin     = std::chrono::year_month_day {*minDate};
+		globalStartDate = std::chrono::year_month {ymdMin.year(), ymdMin.month()};
 
-		auto ymdMax = std::chrono::year_month_day{*maxDate};
-		globalEndDate = std::chrono::year_month{ymdMax.year(), ymdMax.month()};
+		auto ymdMax   = std::chrono::year_month_day {*maxDate};
+		globalEndDate = std::chrono::year_month {ymdMax.year(), ymdMax.month()};
 
-		if(firstTime)
+		if ( firstTime )
 		{
 			startDate = globalStartDate;
-			endDate = globalEndDate;
+			endDate   = globalEndDate;
 			firstTime = false;
 		}
 	}
 }
 
-QHBoxLayout* History::createEnveloppeDropdown()
+QHBoxLayout *History::createEnveloppeDropdown()
 {
-	QHBoxLayout* layout = new QHBoxLayout();
+	QHBoxLayout *layout = new QHBoxLayout();
 
-	QLabel* enveloppeLabel = new QLabel("Enveloppe 封筒:", this);
+	QLabel *enveloppeLabel = new QLabel("Enveloppe 封筒:", this);
 	enveloppeLabel->setStyleSheet("color: #E1E1E2; font-family: 'Helvetica Neue';");
 
 	enveloppeCombo = new QComboBox(this);
@@ -261,22 +259,21 @@ QHBoxLayout* History::createEnveloppeDropdown()
 
 	enveloppeCombo->addItem("Tous すべて");
 
-	for(const auto& env : g_enveloppeManager.getEnveloppes())
+	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
 		enveloppeCombo->addItem(QString::fromStdString(env.getName()));
 
-	if(!selected.empty())
+	if ( !selected.empty() )
 	{
 		int index = enveloppeCombo->findText(QString::fromStdString(selected));
 
-		if(index != -1)
+		if ( index != -1 )
 			enveloppeCombo->setCurrentIndex(index);
 	}
 
-	connect(enveloppeCombo, &QComboBox::currentTextChanged, [this](const QString & text)
-	{
+	connect(enveloppeCombo, &QComboBox::currentTextChanged, [this](const QString &text)
+	        {
 		selected = text.toStdString();
-		QTimer::singleShot(0, this, &History::showHistory);
-	});
+		QTimer::singleShot(0, this, &History::showHistory); });
 
 	layout->addWidget(enveloppeLabel);
 	layout->addWidget(enveloppeCombo);
@@ -308,26 +305,27 @@ QString History::setUpComboStyleSheet()
 			width: 12px;
 			height: 12px;
 		}
-	)").arg(DOWN_ICON);
+	)")
+	    .arg(DOWN_ICON);
 }
 
-QHBoxLayout* History::createDateDropdowns()
+QHBoxLayout *History::createDateDropdowns()
 {
 	static bool registered = []
 	{
 		qRegisterMetaType<std::chrono::year_month>("std::chrono::year_month");
 		return true;
 	}();
-	(void)registered;
+	(void) registered;
 
 	setupDateDropdownWidgets();
 	initDateCombos();
 	connectDateComboSignals();
 
-	QHBoxLayout* layout = new QHBoxLayout();
-	QLabel* startLabel = new QLabel("Début 開始:", this);
+	QHBoxLayout *layout     = new QHBoxLayout();
+	QLabel      *startLabel = new QLabel("Début 開始:", this);
 	startLabel->setStyleSheet("color: #E1E1E2;");
-	QLabel* endLabel = new QLabel("Fin 終了:", this);
+	QLabel *endLabel = new QLabel("Fin 終了:", this);
 	endLabel->setStyleSheet("color: #E1E1E2;");
 
 	layout->addSpacing(20);
@@ -351,44 +349,42 @@ void History::setupDateDropdownWidgets()
 
 void History::initDateCombos()
 {
-	bool initStart = (startDate == std::chrono::year_month{});
-	bool initEnd = (endDate == std::chrono::year_month{});
+	bool initStart = (startDate == std::chrono::year_month {});
+	bool initEnd   = (endDate == std::chrono::year_month {});
 
-	for(auto ym = globalStartDate; ym <= globalEndDate; ym += std::chrono::months{1})
+	for ( auto ym = globalStartDate; ym <= globalEndDate; ym += std::chrono::months {1} )
 	{
-		QString label = QString::number(unsigned(ym.month())) + "/" + QString::number(int(ym.year()));
-		QVariant data = QVariant::fromValue(ym);
+		QString  label = QString::number(unsigned(ym.month())) + "/" + QString::number(int(ym.year()));
+		QVariant data  = QVariant::fromValue(ym);
 		startCombo->addItem(label, data);
 		endCombo->addItem(label, data);
 	}
 
-	if(initStart)
+	if ( initStart )
 		startDate = globalStartDate;
 
-	if(initEnd)
+	if ( initEnd )
 		endDate = globalEndDate;
 
 	int startIdx = startCombo->findData(QVariant::fromValue(startDate));
 
-	if(startIdx != -1)
+	if ( startIdx != -1 )
 		startCombo->setCurrentIndex(startIdx);
 
 	int endIdx = endCombo->findData(QVariant::fromValue(endDate));
 
-	if(endIdx != -1)
+	if ( endIdx != -1 )
 		endCombo->setCurrentIndex(endIdx);
 }
 
 void History::connectDateComboSignals()
 {
 	connect(startCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-	{
+	        {
 		startDate = startCombo->itemData(index).value<std::chrono::year_month>();
-		QTimer::singleShot(0, this, &History::showHistory);
-	});
+		QTimer::singleShot(0, this, &History::showHistory); });
 	connect(endCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-	{
+	        {
 		endDate = endCombo->itemData(index).value<std::chrono::year_month>();
-		QTimer::singleShot(0, this, &History::showHistory);
-	});
+		QTimer::singleShot(0, this, &History::showHistory); });
 }

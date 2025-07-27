@@ -1,17 +1,17 @@
 #include "MainView.hpp"
 #include "EnveloppesTransfer.hpp"
-#include "MenuBar.hpp"
 #include "EnveloppesUi.hpp"
 #include "History.hpp"
-#include "Stats.hpp"
 #include "ImportExpenses.hpp"
+#include "MenuBar.hpp"
+#include "Stats.hpp"
 
-#include <QVBoxLayout>
 #include <QStackedWidget>
+#include <QVBoxLayout>
 
-MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
+MainView::MainView(MenuBar *menuBar, QWidget *parent) : QWidget(parent), menuBar(*menuBar)
 {
-	QVBoxLayout* layout = new QVBoxLayout(this);
+	QVBoxLayout *layout = new QVBoxLayout(this);
 	layout->setContentsMargins(3, 0, 3, 0);
 
 	stack = new QStackedWidget(this);
@@ -34,7 +34,7 @@ MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
 
 void MainView::handleMenuAction(int index)
 {
-	switch(index)
+	switch ( index )
 	{
 	case 0:
 		stack->setCurrentWidget(enveloppesUI);
@@ -59,7 +59,7 @@ void MainView::handleMenuAction(int index)
 		break;
 
 	case 5:
-		enveloppesUI->addEnveloppe();
+		enveloppesUI->addEnveloppe("");
 		updatePages();
 		break;
 
@@ -73,4 +73,5 @@ void MainView::updatePages()
 	enveloppesUI->showEnveloppes();
 	history->showHistory();
 	stats->showStats();
+	menuBar.updateTotalLabel();
 }

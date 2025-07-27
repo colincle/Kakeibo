@@ -13,14 +13,15 @@ class MainView : public QWidget
 {
 	Q_OBJECT
 
-public:
-	explicit MainView(MenuBar* menuBar, QWidget* parent = nullptr);
+  public:
+	explicit MainView(MenuBar *menuBar, QWidget *parent = nullptr);
 
-private:
-	QStackedWidget* stack = nullptr;
-	EnveloppesUi* enveloppesUI = nullptr;
-	History* history = nullptr;
-	Stats* stats = nullptr;
+  private:
+	QStackedWidget *stack        = nullptr;
+	EnveloppesUi   *enveloppesUI = nullptr;
+	History        *history      = nullptr;
+	Stats          *stats        = nullptr;
+	MenuBar        &menuBar;
 
 	void handleMenuAction(int i);
 	void updatePages();
