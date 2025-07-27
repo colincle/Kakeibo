@@ -50,8 +50,21 @@ void MenuBar::updateTotalLabel()
 	for ( const auto &e : g_enveloppeManager.getEnveloppes() )
 		total += e.getAmount();
 
-	QString formatted = QLocale(QLocale::Japanese, QLocale::Japan).toString(total);
-	totalLabel->setText(QString("¥%1").arg(formatted));
+	QLocale jp(QLocale::Japanese, QLocale::Japan);
+	QString formattedYen = jp.toString(total);
+
+	QString formattedEur;
+	float   rate = getEurJpyRateCached();
+
+	if ( rate > 0 )
+	{
+		QLocale fr(QLocale::French, QLocale::France);
+		formattedEur = fr.toString(total / rate, 'f', 2) + "€";
+	}
+	else
+		formattedEur = "-€";
+
+	totalLabel->setText(QString("¥%1 | %2").arg(formattedYen, formattedEur));
 }
 
 void MenuBar::setStyle()

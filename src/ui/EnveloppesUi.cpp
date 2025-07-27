@@ -194,9 +194,13 @@ void EnveloppesUi::addCardContent(QVBoxLayout *layout, const Enveloppe &env, con
 	)");
 
 	QLocale jpLocale(QLocale::Japanese, QLocale::Japan);
-	QString formattedAmount = "¥ " + jpLocale.toString(env.getAmount());
+	QLocale frLocale(QLocale::French, QLocale::France);
+	float   rate = getEurJpyRateCached();
 
-	auto *amountLabel = new QLabel(formattedAmount);
+	QString formattedAmount = "¥ " + jpLocale.toString(env.getAmount());
+	QString eurAmount       = rate > 0 ? "€ " + frLocale.toString(env.getAmount() / rate, 'f', 2) : "-€";
+
+	auto *amountLabel = new QLabel(QString("%1\n%2").arg(formattedAmount, eurAmount));
 	amountLabel->setStyleSheet(QString(R"(
 		font-family: 'Helvetica Neue';
 		color: %1;
@@ -283,9 +287,18 @@ void EnveloppesUi::connectCardButtons(const Enveloppe &env, const QList<QPushBut
 QWidget *EnveloppesUi::createGoalMaxLabel(const Enveloppe &env)
 {
 	QLocale jp(QLocale::Japanese, QLocale::Japan);
-	auto   *label = new QLabel(QString("Plafond / 上限額  ¥%1\nObjectif mensuel / 月間目標  ¥%2")
-	                               .arg(jp.toString(env.getMaxAmount()))
-	                               .arg(jp.toString(env.getGoal())));
+	QLocale fr(QLocale::French, QLocale::France);
+	float   rate = getEurJpyRateCached();
+
+	QString maxYen  = jp.toString(env.getMaxAmount());
+	QString goalYen = jp.toString(env.getGoal());
+
+	QString maxEur  = rate > 0 ? fr.toString(env.getMaxAmount() / rate, 'f', 2) + "€" : "-€";
+	QString goalEur = rate > 0 ? fr.toString(env.getGoal() / rate, 'f', 2) + "€" : "-€";
+
+	auto *label = new QLabel(QString("Plafond / 上限額  ¥%1 | %2\nObjectif mensuel / 月間目標  ¥%3 | %4")
+	                             .arg(maxYen, maxEur, goalYen, goalEur));
+
 	label->setStyleSheet(R"(
 		font-family: 'Helvetica Neue';
 		color: #AAAAAA;

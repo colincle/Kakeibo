@@ -297,8 +297,7 @@ void Stats::updateGlobalDateRange()
 
 std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe &env)
 {
-	int                                     total = 0;
-	std::map<std::pair<int, unsigned>, int> perMonth;
+	int total = 0;
 
 	for ( const auto &exp : env.getExpenses() )
 	{
@@ -308,12 +307,11 @@ std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe &env)
 			continue;
 
 		total += exp.amount;
-		perMonth[{int(exp.date.year()), unsigned(exp.date.month())}] += exp.amount;
 	}
 
-	int monthCount  = static_cast<int>(perMonth.size());
-	int perMonthAvg = monthCount ? total / monthCount : 0;
-	int perYearAvg  = monthCount >= 12 ? (total * 12) / monthCount : -1;
+	int monthCount  = static_cast<int>((endDate - startDate) / std::chrono::months {1}) + 1;
+	int perMonthAvg = monthCount > 0 ? total / monthCount : 0;
+	int perYearAvg  = monthCount > 0 ? (total * 12) / monthCount : -1;
 
 	return {total, perMonthAvg, perYearAvg};
 }
