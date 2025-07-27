@@ -17,6 +17,9 @@ class EnveloppesUi : public QWidget
 {
 	Q_OBJECT
 
+signals:
+	void updateNeeded();
+
 public:
 	EnveloppesUi(QWidget* parent = nullptr);
 	void showEnveloppes();
@@ -40,9 +43,10 @@ private:
 
 	QGridLayout* gridLayout = nullptr;
 	QTimer* resizeDebounceTimer = nullptr;
+	QScrollArea* scrollArea = nullptr;
+	QWidget* scrollContent = nullptr;
 
 	void clearEnveloppes();
-	void createFormInputs(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f);
 	void addDialogButtons(QDialog* dialog, QFormLayout* layout);
 	void handleEnveloppeSubmission(const EnveloppeFormFields& f);
 	void createFields(QDialog* dialog, QFormLayout* layout, EnveloppeFormFields& f);
@@ -52,4 +56,5 @@ private:
 	QString getProgressBarColor(int percent);
 	QWidget* createCardButtons(const Enveloppe& env);
 	QScrollArea* createScrollArea(QWidget* content);
+	void deleteEnveloppe(Enveloppe env);
 };

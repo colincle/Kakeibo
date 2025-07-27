@@ -11,8 +11,6 @@
 
 MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
 {
-	connect(menuBar, &MenuBar::menuButtonClicked, this, &MainView::handleMenuAction);
-
 	QVBoxLayout* layout = new QVBoxLayout(this);
 	layout->setContentsMargins(3, 0, 3, 0);
 
@@ -30,6 +28,8 @@ MainView::MainView(MenuBar* menuBar, QWidget* parent) : QWidget(parent)
 
 	stack->setCurrentIndex(0);
 
+	connect(menuBar, &MenuBar::menuButtonClicked, this, &MainView::handleMenuAction);
+	connect(enveloppesUI, &EnveloppesUi::updateNeeded, this, &MainView::updatePages);
 }
 
 void MainView::handleMenuAction(int index)

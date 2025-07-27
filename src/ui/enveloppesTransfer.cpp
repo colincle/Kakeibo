@@ -1,14 +1,22 @@
 #include "EnveloppesTransfer.hpp"
+#include "Assets.hpp"
 #include "Globals.hpp"
 
-#include <QDialog>
+#include <functional>
+#include <tuple>
+
 #include <QComboBox>
+#include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListView>
 #include <QPushButton>
+#include <QString>
+#include <QVBoxLayout>
+#include <QWidget>
 
 void EnveloppesTransfer::transfer(QWidget* parent)
 {
@@ -27,33 +35,112 @@ void EnveloppesTransfer::transfer(QWidget* parent)
 
 void EnveloppesTransfer::setupDialogStyle(QDialog& dialog)
 {
-	dialog.setWindowTitle("Transfer Enveloppe");
-	dialog.setStyleSheet(R"(
-		QLabel { color: black; }
-		QPushButton { color: black; }
-		QDialogButtonBox QPushButton { color: black; }
-		QPushButton:disabled { color: gray; }
-	)");
+	QString style = QString(R"(
+		QDialog {
+			background-color: #242F32;
+			color: #E1E1E2;
+			font-family: "Helvetica Neue";
+		}
+		QLabel {
+			color: #E1E1E2;
+		}
+		QLineEdit, QComboBox {
+			background-color: #1B272A;
+			color: #E1E1E2;
+			border: 1px solid #444;
+			border-radius: 4px;
+			padding: 4px;
+			min-height: 28px;
+			padding-left: 6px;
+		}
+		QComboBox::drop-down {
+			subcontrol-origin: padding;
+			subcontrol-position: top right;
+			width: 25px;
+			border-left: 1px solid #444;
+			background-color: #2F3D41;
+		}
+		QComboBox::down-arrow {
+			image: url(%1);
+			width: 12px;
+			height: 12px;
+		}
+		QPushButton {
+			background-color: #1B272A;
+			color: #E1E1E2;
+			border: none;
+			padding: 6px 12px;
+			border-radius: 2px;
+			min-width: 80px;
+		}
+		QPushButton:hover {
+			background-color: #2F3D41;
+		}
+		QPushButton:disabled {
+			color: gray;
+		}
+	)").arg(DOWN_ICON);
+
+	dialog.setStyleSheet(style);
 }
 
 TransferUi EnveloppesTransfer::createUiElements(QDialog& dialog, const std::vector<Enveloppe>& envs)
 {
+	QComboBox* fromBox = createComboBox(dialog);
+	QComboBox* toBox = createComboBox(dialog);
+
+	QDialogButtonBox* buttons;
+	QPushButton* okButton;
+	QPushButton* cancelButton;
+	std::tie(buttons, okButton, cancelButton) = createDialogButtons(dialog);
+
 	TransferUi ui
 	{
-		new QComboBox(&dialog),
-		new QComboBox(&dialog),
+		fromBox,
+		toBox,
 		new QLineEdit(&dialog),
-		new QPushButton("Fill to goal", &dialog),
+		new QPushButton("Remplir jusqu’à l’objectif \n目標まで追加", &dialog),
 		new QLabel(&dialog),
-		new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog),
-		envs
+		buttons,
+		envs,
+		okButton,
+		cancelButton
 	};
-	ui.fromBox->setStyleSheet("color: black;");
-	ui.toBox->setStyleSheet("color: black;");
-	ui.amountEdit->setStyleSheet("color: black;");
-	ui.fillButton->setStyleSheet("color: black;");
-	ui.previewLabel->setStyleSheet("color: black;");
 	return ui;
+}
+
+QComboBox* EnveloppesTransfer::createComboBox(QDialog& dialog)
+{
+	QComboBox* box = new QComboBox(&dialog);
+	QListView* view = new QListView(&dialog);
+	view->setStyleSheet(R"(
+		QListView {
+			background-color: #1B272A;
+			color: #E1E1E2;
+			padding: 0px;
+			margin: 0px;
+			border: none;
+		}
+		QListView::item:selected {
+			background-color: #2F3D41;
+			color: #E1E1E2;
+		}
+	)");
+	box->setView(view);
+	return box;
+}
+
+std::tuple<QDialogButtonBox*, QPushButton*, QPushButton*> EnveloppesTransfer::createDialogButtons(QDialog& dialog)
+{
+	auto* box = new QDialogButtonBox(Qt::Horizontal, &dialog);
+	auto* ok = new QPushButton("OK 確定", &dialog);
+	auto* cancel = new QPushButton("Annuler キャンセル", &dialog);
+	box->addButton(ok, QDialogButtonBox::AcceptRole);
+	box->addButton(cancel, QDialogButtonBox::RejectRole);
+
+	QObject::connect(box, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+	QObject::connect(box, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+	return { box, ok, cancel };
 }
 
 void EnveloppesTransfer::fillComboBoxes(TransferUi& ui)
@@ -66,64 +153,73 @@ void EnveloppesTransfer::fillComboBoxes(TransferUi& ui)
 	}
 }
 
-static auto makeUpdateOk(const TransferUi& ui)
+void EnveloppesTransfer::buildLayout(QDialog& dialog, TransferUi& ui)
 {
-	return [ = ]()
-	{
-		int fromRaw = ui.fromBox->currentIndex();
-		int toRaw = ui.toBox->currentIndex();
-
-		if(fromRaw < 0 || toRaw < 0 || fromRaw == toRaw)
-			return ui.buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
-
-		size_t fromIdx = static_cast<size_t>(fromRaw);
-		int amount = ui.amountEdit->text().toInt();
-		bool valid = !ui.amountEdit->text().isEmpty()
-		             && amount > 0
-		             && amount <= ui.enveloppes[fromIdx].getAmount();
-		ui.buttons->button(QDialogButtonBox::Ok)->setEnabled(valid);
-	};
+	QFormLayout* layout = createFormLayout(dialog);
+	styleWidgets(ui);
+	addComboBoxes(layout, ui);
+	addAmountRow(dialog, layout, ui);
+	layout->addRow("", ui.previewLabel);
+	layout->addWidget(ui.buttons);
 }
 
-static auto makeUpdateFill(const TransferUi& ui)
+QFormLayout* EnveloppesTransfer::createFormLayout(QDialog& dialog)
 {
-	return [ = ]()
-	{
-		int fromRaw = ui.fromBox->currentIndex();
-		int toRaw = ui.toBox->currentIndex();
-
-		if(fromRaw < 0 || toRaw < 0 || fromRaw == toRaw)
-			return ui.fillButton->setEnabled(false);
-
-		size_t fromIdx = static_cast<size_t>(fromRaw);
-		size_t toIdx = static_cast<size_t>(toRaw);
-		ui.fillButton->setEnabled(
-		    EnveloppesTransfer::fillToGoal(ui.enveloppes[fromIdx], ui.enveloppes[toIdx]) > 0);
-	};
+	QFormLayout* layout = new QFormLayout(&dialog);
+	layout->setLabelAlignment(Qt::AlignLeft);
+	layout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+	layout->setSpacing(10);
+	return layout;
 }
 
-static auto makeUpdatePreview(const TransferUi& ui)
+void EnveloppesTransfer::styleWidgets(TransferUi& ui)
 {
-	return [ = ]()
-	{
-		int fromRaw = ui.fromBox->currentIndex();
-		int toRaw = ui.toBox->currentIndex();
-		int amount = ui.amountEdit->text().toInt();
+	QString comboStyle = R"(
+		background-color: #1B272A;
+		color: #E1E1E2;
+		border: 1px solid #2F3D41;
+		border-radius: 4px;
+		padding: 4px;
+	)";
+	QString inputStyle = R"(
+		background-color: #1B272A;
+		color: #E1E1E2;
+		border: 1px solid #2F3D41;
+		border-radius: 4px;
+		padding: 4px;
+	)";
+	QString buttonStyle = R"(
+		background-color: #1B272A;
+		color: #E1E1E2;
+		border: none;
+		padding: 6px 12px;
+		border-radius: 4px;
+	)";
 
-		if(fromRaw < 0 || toRaw < 0 || fromRaw == toRaw || amount <= 0)
-			return ui.previewLabel->clear();
+	ui.fromBox->setStyleSheet(comboStyle);
+	ui.toBox->setStyleSheet(comboStyle);
+	ui.amountEdit->setStyleSheet(inputStyle);
+	ui.previewLabel->setStyleSheet("color: #E1E1E2;");
+	ui.fillButton->setStyleSheet(buttonStyle);
+}
 
-		size_t fromIdx = static_cast<size_t>(fromRaw);
-		size_t toIdx = static_cast<size_t>(toRaw);
+void EnveloppesTransfer::addComboBoxes(QFormLayout* layout, TransferUi& ui)
+{
+	layout->addRow("De\n送金元:", ui.fromBox);
+	layout->addRow("À\n送金先:", ui.toBox);
+}
 
-		NewAmounts n = EnveloppesTransfer::newAmounts(
-		                   ui.enveloppes[fromIdx], ui.enveloppes[toIdx], amount);
-		QString fn = QString::fromStdString(ui.enveloppes[fromIdx].getName());
-		QString tn = QString::fromStdString(ui.enveloppes[toIdx].getName());
-		ui.previewLabel->setText(QString("%1: %2 → %3\n%4: %5 → %6")
-		                         .arg(fn).arg(ui.enveloppes[fromIdx].getAmount()).arg(n.newFrom)
-		                         .arg(tn).arg(ui.enveloppes[toIdx].getAmount()).arg(n.newTo));
-	};
+void EnveloppesTransfer::addAmountRow(QDialog& dialog, QFormLayout* layout, TransferUi& ui)
+{
+	QGridLayout* grid = new QGridLayout();
+	grid->setContentsMargins(0, 0, 0, 0);
+	grid->setHorizontalSpacing(10);
+	grid->addWidget(ui.amountEdit, 0, 0);
+	grid->addWidget(ui.fillButton, 0, 1);
+
+	QWidget* rowWidget = new QWidget(&dialog);
+	rowWidget->setLayout(grid);
+	layout->addRow("Amount:", rowWidget);
 }
 
 void EnveloppesTransfer::setupConnections(TransferUi& ui, QDialog& dialog)
@@ -145,7 +241,16 @@ void EnveloppesTransfer::setupConnections(TransferUi& ui, QDialog& dialog)
 	QObject::connect(ui.amountEdit, &QLineEdit::textChanged, updatePreview);
 	updatePreview();
 
-	QObject::connect(ui.fillButton, &QPushButton::clicked, [ = ]()
+	QObject::connect(ui.fillButton, &QPushButton::clicked, makeFillHandler(ui));
+	QObject::connect(ui.buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+	QObject::connect(ui.buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+	ui.okButton->setEnabled(false);
+}
+
+std::function<void()> EnveloppesTransfer::makeFillHandler(TransferUi& ui)
+{
+	return [ =, &ui ]()
 	{
 		int fromRaw = ui.fromBox->currentIndex();
 		int toRaw = ui.toBox->currentIndex();
@@ -155,30 +260,75 @@ void EnveloppesTransfer::setupConnections(TransferUi& ui, QDialog& dialog)
 
 		size_t fromIdx = static_cast<size_t>(fromRaw);
 		size_t toIdx = static_cast<size_t>(toRaw);
-
-		int val = EnveloppesTransfer::fillToGoal(ui.enveloppes[fromIdx], ui.enveloppes[toIdx]);
+		int val = fillToGoal(ui.enveloppes[fromIdx], ui.enveloppes[toIdx]);
 
 		if(val > 0)
 			ui.amountEdit->setText(QString::number(val));
-	});
-
-	QObject::connect(ui.buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-	QObject::connect(ui.buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-	ui.buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
+	};
 }
 
-void EnveloppesTransfer::buildLayout(QDialog& dialog, TransferUi& ui)
+auto EnveloppesTransfer::makeUpdateOk(const TransferUi& ui) -> std::function<void()>
 {
-	QFormLayout* layout = new QFormLayout(&dialog);
-	layout->addRow("From:", ui.fromBox);
-	layout->addRow("To:", ui.toBox);
-	QHBoxLayout* amtRow = new QHBoxLayout();
-	amtRow->addWidget(ui.amountEdit);
-	amtRow->addWidget(ui.fillButton);
-	layout->addRow("Amount:", amtRow);
-	layout->addRow("Preview:", ui.previewLabel);
-	layout->addWidget(ui.buttons);
+	return [ = ]()
+	{
+		int fromRaw = ui.fromBox->currentIndex();
+		int toRaw = ui.toBox->currentIndex();
+
+		if(fromRaw < 0 || toRaw < 0 || fromRaw == toRaw)
+			return ui.okButton->setEnabled(false);
+
+		size_t fromIdx = static_cast<size_t>(fromRaw);
+		int amount = ui.amountEdit->text().toInt();
+		bool valid = !ui.amountEdit->text().isEmpty()
+		             && amount > 0
+		             && amount <= ui.enveloppes[fromIdx].getAmount();
+		ui.okButton->setEnabled(valid);
+	};
 }
+
+auto EnveloppesTransfer::makeUpdateFill(const TransferUi& ui) -> std::function<void()>
+{
+	return [ = ]()
+	{
+		int fromRaw = ui.fromBox->currentIndex();
+		int toRaw = ui.toBox->currentIndex();
+
+		if(fromRaw < 0 || toRaw < 0 || fromRaw == toRaw)
+			return ui.fillButton->setEnabled(false);
+
+		size_t fromIdx = static_cast<size_t>(fromRaw);
+		size_t toIdx = static_cast<size_t>(toRaw);
+		ui.fillButton->setEnabled(
+		    EnveloppesTransfer::fillToGoal(ui.enveloppes[fromIdx], ui.enveloppes[toIdx]) > 0);
+	};
+}
+
+auto EnveloppesTransfer::makeUpdatePreview(const TransferUi& ui) -> std::function<void()>
+{
+	return [ = ]()
+	{
+		int fromRaw = ui.fromBox->currentIndex();
+		int toRaw = ui.toBox->currentIndex();
+		int amount = ui.amountEdit->text().toInt();
+
+		if(fromRaw < 0 || toRaw < 0 || fromRaw == toRaw || amount <= 0)
+			return ui.previewLabel->clear();
+
+		size_t fromIdx = static_cast<size_t>(fromRaw);
+		size_t toIdx = static_cast<size_t>(toRaw);
+
+		NewAmounts n = EnveloppesTransfer::newAmounts(
+		                   ui.enveloppes[fromIdx], ui.enveloppes[toIdx], amount);
+		QString fn = QString::fromStdString(ui.enveloppes[fromIdx].getName());
+		QString tn = QString::fromStdString(ui.enveloppes[toIdx].getName());
+		fn.replace('\n', ' ');
+		tn.replace('\n', ' ');
+		ui.previewLabel->setText(QString("%1: %2 → %3\n%4: %5 → %6")
+		                         .arg(fn).arg(ui.enveloppes[fromIdx].getAmount()).arg(n.newFrom)
+		                         .arg(tn).arg(ui.enveloppes[toIdx].getAmount()).arg(n.newTo));
+	};
+}
+
 
 void EnveloppesTransfer::applyTransfer(const TransferUi& ui)
 {

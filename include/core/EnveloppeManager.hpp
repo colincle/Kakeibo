@@ -18,6 +18,8 @@ public:
 	void transfer(std::string from, std::string to, int amount);
 	void addTypeAndExpense(const std::string& name, const Expense& e);
 	void addExpense(Expense e, Enveloppe& env);
+	void moveEnveloppe(const std::string& name, bool up);
+	void deleteEnveloppe(const std::string& name);
 
 private:
 

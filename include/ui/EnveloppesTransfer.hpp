@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <tuple>
+#include <functional>
 
 class QWidget;
 class QDialog;
@@ -12,6 +14,7 @@ class QLabel;
 class QDialogButtonBox;
 class QFormLayout;
 class QHBoxLayout;
+class QListView;
 
 class Enveloppe;
 
@@ -29,7 +32,9 @@ struct TransferUi
 	QPushButton* fillButton;
 	QLabel* previewLabel;
 	QDialogButtonBox* buttons;
-	const std::vector<Enveloppe>& enveloppes;
+	std::vector<Enveloppe> enveloppes;
+	QPushButton* okButton;
+	QPushButton* cancelButton;
 };
 
 class EnveloppesTransfer final
@@ -44,10 +49,23 @@ private:
 
 	static void setupDialogStyle(QDialog& dialog);
 	static TransferUi createUiElements(QDialog& dialog, const std::vector<Enveloppe>& envs);
+	static QComboBox* createComboBox(QDialog& dialog);
+	static std::tuple<QDialogButtonBox*, QPushButton*, QPushButton*> createDialogButtons(QDialog& dialog);
+
 	static void fillComboBoxes(TransferUi& ui);
 	static void setupConnections(TransferUi& ui, QDialog& dialog);
 	static void buildLayout(QDialog& dialog, TransferUi& ui);
 	static void applyTransfer(const TransferUi& ui);
+
+	static QFormLayout* createFormLayout(QDialog& dialog);
+	static void styleWidgets(TransferUi& ui);
+	static void addComboBoxes(QFormLayout* layout, TransferUi& ui);
+	static void addAmountRow(QDialog& dialog, QFormLayout* layout, TransferUi& ui);
+
+	static std::function<void()> makeFillHandler(TransferUi& ui);
+	static std::function<void()> makeUpdateOk(const TransferUi& ui);
+	static std::function<void()> makeUpdateFill(const TransferUi& ui);
+	static std::function<void()> makeUpdatePreview(const TransferUi& ui);
 
 public:
 	static void transfer(QWidget* parent);

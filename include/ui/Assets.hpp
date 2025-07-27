@@ -1,4 +1,4 @@
-#pragma once
+#pragma once//WIP
 
 #include <QCoreApplication>
 #include <QString>
@@ -14,3 +14,7 @@
 #define CROSS_ICON                 QStringLiteral(ICONS_PATH "Cross.png")
 #define LEFT_ICON                  QStringLiteral(ICONS_PATH "Left.png")
 #define RIGHT_ICON                 QStringLiteral(ICONS_PATH "Right.png")
+#define DOWN_ICON                 QStringLiteral(ICONS_PATH "Down.png")
+#define TRANSFER_ICON                 QStringLiteral(ICONS_PATH "Transfer.png")
+#define PLUS_ICON                 QStringLiteral(ICONS_PATH "Plus.png")
+#define IMPORT_ICON                 QStringLiteral(ICONS_PATH "Import.png")

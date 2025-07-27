@@ -5,8 +5,8 @@
 #include <QKeySequence>
 #include <QSizePolicy>
 
-#include "MenuBar.hpp"
 #include "MainView.hpp"
+#include "MenuBar.hpp"
 
 QWidget* createMainWindow()
 {
@@ -35,6 +35,7 @@ void	setUpAppLayout(QWidget* window)
 	MainView* mainView = new MainView(menuBar, window);
 	mainView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	mainLayout->addWidget(menuBar);
+	mainLayout->addSpacing(8);
 	mainLayout->addWidget(mainView, 1);
 }
 
@@ -52,5 +53,12 @@ int main(int argc, char *argv[])
 TO DO
 
 - Format style sheets
+- Format lambdas
 - Make the tables non writtable
+- enveloppe edit
+- have negative amounts always red
+- bar issues above 100%
+- plafond and objecttif locale
+- change the red orange blue logic
+- history update issues
 */

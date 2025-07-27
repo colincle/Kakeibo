@@ -6,19 +6,23 @@
 MenuBarButton::MenuBarButton(const QString& text, QWidget* parent)
 	: QPushButton(text, parent)
 {
+	setProperty("active", false);
 	setFlat(true);
 	setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-	setFixedHeight(40);
-
-	setStyleSheet
-	(R"(
-		font-family: "Helvetica Neue";
-		font-weight: 100;
-		background-color: #cccccc;
-		border: #dddddd;
-		border: 1px solid;
-		border-radius: 5px;
-		color: black;
-		padding: 4px 10px;
+	setFixedHeight(50);
+	setStyleSheet(R"(
+		QPushButton {
+			font-family: 'Helvetica Neue';
+			font-size: 16px;
+			color: #E1E1E2;
+			background-color: #1B272A;
+			border: none;
+		}
+		QPushButton[active="true"] {
+			color: #337BFF;
+			background-color: #242F32;
+			border-top-left-radius: 16px;
+			border-top-right-radius: 16px;
+		}
 	)");
 }

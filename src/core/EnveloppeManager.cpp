@@ -127,3 +127,36 @@ void EnveloppeManager::addExpense(Expense e, Enveloppe& env)
 	env.addToExpenseVector(e);
 	saveEnveloppesToJson();
 }
+
+void EnveloppeManager::moveEnveloppe(const std::string& name, bool up)
+{
+	for(size_t i = 0; i < enveloppes.size(); ++i)
+	{
+		if(enveloppes[i].getName() == name)
+		{
+			if(up && i > 0)
+				std::swap(enveloppes[i], enveloppes[i - 1]);
+			else
+				if(!up && i + 1 < enveloppes.size())
+					std::swap(enveloppes[i], enveloppes[i + 1]);
+
+			break;
+		}
+	}
+
+	saveEnveloppesToJson();
+}
+
+void EnveloppeManager::deleteEnveloppe(const std::string& name)
+{
+	auto it = std::remove_if(enveloppes.begin(), enveloppes.end(), [&](const Enveloppe & e)
+	{
+		return e.getName() == name;
+	});
+
+	if(it != enveloppes.end())
+	{
+		enveloppes.erase(it, enveloppes.end());
+		saveEnveloppesToJson();
+	}
+}
