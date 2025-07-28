@@ -16,10 +16,11 @@ MenuBarButton::MenuBarButton(const QString &text, QWidget *parent)
 			font-size: 16px;
 			color: #E1E1E2;
 			background-color: #1B272A;
-			border: none;
+			border-bottom: 1px solid #2F3D41;
 		}
 		QPushButton[active="true"] {
 			color: #337BFF;
+			border: none;
 			background-color: #242F32;
 			border-top-left-radius: 16px;
 			border-top-right-radius: 16px;

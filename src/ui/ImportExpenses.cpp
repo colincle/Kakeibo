@@ -4,6 +4,7 @@
 #include "Globals.hpp"
 #include "Parser.hpp"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDate>
 #include <QDialog>
@@ -191,10 +192,14 @@ void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 	}
 
 	if ( !matched )
-		g_enveloppeManager.addTypeAndExpense(selectEnveloppeDialog(parent, enveloppes, e), e);
+	{
+		bool        rememberType = false;
+		std::string selected     = selectEnveloppeDialog(parent, enveloppes, e, rememberType);
+		g_enveloppeManager.addTypeAndExpense(selected, e, rememberType);
+	}
 }
 
-std::string ImportExpenses::selectEnveloppeDialog(QWidget *parent, const std::vector<Enveloppe> &enveloppes, const Expense &e)
+std::string ImportExpenses::selectEnveloppeDialog(QWidget *parent, const std::vector<Enveloppe> &enveloppes, const Expense &e, bool &rememberType)
 {
 	QStringList names;
 
@@ -214,17 +219,24 @@ std::string ImportExpenses::selectEnveloppeDialog(QWidget *parent, const std::ve
 		dialog.setOption(QInputDialog::UseListViewForComboBoxItems);
 		dialog.setStyleSheet(setDialogStyleSheet());
 
+		QCheckBox        *check   = new QCheckBox("Se souvenir de ce choix この選択を記憶する");
 		QDialogButtonBox *buttons = createDialogButtons(&dialog);
 		QVBoxLayout      *layout  = qobject_cast<QVBoxLayout *>(dialog.layout());
 
 		if ( layout )
+		{
+			layout->addWidget(check);
 			layout->addWidget(buttons);
+		}
 
 		QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
 		QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
 		if ( dialog.exec() == QDialog::Accepted )
-			selected = dialog.textValue();
+		{
+			selected     = dialog.textValue();
+			rememberType = check->isChecked();
+		}
 	}
 
 	return selected.toStdString();

@@ -1,5 +1,6 @@
 #include "History.hpp"
 #include "Assets.hpp"
+#include "EnveloppeManager.hpp"
 #include "Globals.hpp"
 
 #include <QAbstractItemView>
@@ -8,6 +9,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
 #include <QMetaType>
 #include <QScrollArea>
 #include <QTableWidget>
@@ -113,6 +115,66 @@ void History::setUpTable(QTableWidget *table)
 	table->setShowGrid(true);
 	table->setGridStyle(Qt::SolidLine);
 	table->setStyleSheet(setTableStyleSheet());
+	table->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(table, &QTableWidget::customContextMenuRequested, this, [this, table](const QPoint &pos)
+	{
+		int row = table->rowAt(pos.y());
+
+		if (row < 0)
+			return;
+
+		QString date = table->item(row, 0)->data(Qt::UserRole).toString();
+		QString amount = table->item(row, 1)->data(Qt::UserRole).toString();
+		QString enveloppe = table->item(row, 2)->data(Qt::UserRole).toString();
+		QString desc = table->item(row, 3)->data(Qt::UserRole).toString();
+
+		handleRightClick(date, amount, enveloppe, desc);
+	});
+}
+
+void History::handleRightClick(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc)
+{
+	QMenu *menu = new QMenu(this);
+	menu->setStyleSheet(R"(
+		QMenu::separator {
+			height: 1px;
+			background: black;
+			margin: 4px 0;
+		}
+	)");
+
+	QMenu *moveMenu = menu->addMenu("Déplacer vers une autre enveloppe / 別の封筒に移動");
+	for (const auto &env : g_enveloppeManager.getEnveloppes())
+	{
+		QString name = QString::fromStdString(env.getName());
+		if (name == enveloppe)
+			continue ;
+		QAction *action = moveMenu->addAction(name);
+		moveMenu->addSeparator();
+		connect(action, &QAction::triggered, this, [=]() {
+			g_enveloppeManager.moveExpenseToNewEnveloppe(date, amount, enveloppe, desc, name);
+			emit updateNeeded();
+		});
+	}
+
+	menu->addSeparator();
+	QAction *forgetAction = menu->addAction("Oublier le type de dépense / 支出タイプを忘れる");
+	menu->addSeparator();
+	QAction *deleteAction = menu->addAction("Supprimer / 削除");
+
+	QAction *selection = menu->exec(QCursor::pos());
+
+	if (selection == forgetAction)
+	{
+		g_enveloppeManager.forgetExpenseType(enveloppe, desc);
+		emit updateNeeded();
+	}
+	else if (selection == deleteAction)
+	{
+		g_enveloppeManager.deleteExpense(date, amount, enveloppe, desc);
+		emit updateNeeded();
+	}
+
 }
 
 QString History::setTableStyleSheet()
@@ -196,22 +258,36 @@ void History::fillTableWithExpenses(QTableWidget *table, const std::vector<Expen
 {
 	QLocale jp(QLocale::Japanese, QLocale::Japan);
 
-	for ( const auto &exp : expenses )
+	for (const auto &exp : expenses)
 	{
 		int row = table->rowCount();
 		table->insertRow(row);
 
-		table->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(std::format("{}", exp.date))));
+		QString originalDate = QString::fromStdString(std::format("{}", exp.date));
+		auto *dateItem = new QTableWidgetItem(originalDate);
+		dateItem->setData(Qt::UserRole, originalDate);
+		table->setItem(row, 0, dateItem);
 
-		auto *amountItem = new QTableWidgetItem(QString("¥%1").arg(jp.toString(exp.amount)));
+		QString formattedAmount = QString("¥%1").arg(jp.toString(exp.amount));
+		auto *amountItem = new QTableWidgetItem(formattedAmount);
 		amountItem->setForeground(QBrush(QColor(exp.amount < 0 ? "#FA5E57" : "#337BFF")));
+		amountItem->setData(Qt::UserRole, QString::number(exp.amount));
 		table->setItem(row, 1, amountItem);
 
-		QString name = QString::fromStdString(exp.enveloppe).replace('\n', ' ');
-		table->setItem(row, 2, new QTableWidgetItem(name));
-		table->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(exp.info)));
+		QString originalEnv = QString::fromStdString(exp.enveloppe);
+		QString displayEnv = originalEnv;
+		displayEnv.replace('\n', ' ');
+		auto *envItem = new QTableWidgetItem(displayEnv);
+		envItem->setData(Qt::UserRole, originalEnv);
+		table->setItem(row, 2, envItem);
+
+		QString originalInfo = QString::fromStdString(exp.info);
+		auto *descItem = new QTableWidgetItem(originalInfo);
+		descItem->setData(Qt::UserRole, originalInfo);
+		table->setItem(row, 3, descItem);
 	}
 }
+
 
 void History::updateGlobalDateRange()
 {

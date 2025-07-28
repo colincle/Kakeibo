@@ -10,6 +10,7 @@
 
 QWidget *createMainWindow()
 {
+	QLocale::setDefault(QLocale(QLocale::French, QLocale::France));
 	QWidget *window = new QWidget;
 	window->setAttribute(Qt::WA_StyledBackground, true);
 	window->setAutoFillBackground(true);
@@ -35,7 +36,6 @@ void setUpAppLayout(QWidget *window)
 	MainView *mainView = new MainView(menuBar, window);
 	mainView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	mainLayout->addWidget(menuBar);
-	mainLayout->addSpacing(8);
 	mainLayout->addWidget(mainView, 1);
 }
 

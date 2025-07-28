@@ -35,7 +35,7 @@ class ImportExpenses final
 	static QPlainTextEdit             *createTextInput(QWidget *parent, QVBoxLayout *layout);
 	static void                        addDialogButtons(QDialog *dialog, QVBoxLayout *layout);
 
-	static std::string       selectEnveloppeDialog(QWidget *parent, const std::vector<Enveloppe> &enveloppes, const Expense &e);
+	static std::string       selectEnveloppeDialog(QWidget *parent, const std::vector<Enveloppe> &enveloppes, const Expense &e, bool &rememberType);
 	static QString           buildDialogLabel(const Expense &e);
 	static QDialogButtonBox *createDialogButtons(QDialog *parent);
 };

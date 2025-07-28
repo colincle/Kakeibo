@@ -19,6 +19,9 @@ class History : public QWidget
 {
 	Q_OBJECT
 
+ signals:
+	void updateNeeded();
+
   public:
 	explicit History(QWidget *parent = nullptr);
 	void showHistory();
@@ -56,4 +59,6 @@ class History : public QWidget
 	void         setupDateDropdownWidgets();
 	void         initDateCombos();
 	void         connectDateComboSignals();
+
+	void handleRightClick(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc);
 };

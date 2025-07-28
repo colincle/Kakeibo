@@ -73,8 +73,9 @@ void MenuBar::setStyle()
 	setFixedHeight(55);
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 	setStyleSheet(R"(
-        background-color: #1B272A;
-    )");
+		background-color: #1B272A;
+		border-bottom: 1px solid #2F3D41;
+	)");
 }
 
 void MenuBar::addActionsButtons(QHBoxLayout *layout)
@@ -87,6 +88,7 @@ void MenuBar::addActionsButtons(QHBoxLayout *layout)
 		btn->setStyleSheet(R"(
 			QPushButton {
 				background-color: #1B272A;
+				border: none;
 				border-radius: 20px;
 			}
 			QPushButton:pressed {

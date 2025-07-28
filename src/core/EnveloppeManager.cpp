@@ -1,8 +1,12 @@
 #include "EnveloppeManager.hpp"
 #include "json.hpp"
+
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <format>
+
+#include <QString>
 
 using json = nlohmann::json;
 
@@ -51,6 +55,9 @@ void EnveloppeManager::getEnveloppesFromJson()
 		if ( item.contains("expenses") )
 			e.setExpenses(item.at("expenses").get<std::vector<Expense>>());
 
+		if ( item.contains("cloud") )
+			e.setCloud(item.at("cloud").get<bool>());
+
 		enveloppes.push_back(std::move(e));
 	}
 }
@@ -68,7 +75,8 @@ void EnveloppeManager::saveEnveloppesToJson()
 		     {"goal", env.getGoal()},
 		     {"savings", env.isSavings()},
 		     {"types", env.getTypes()},
-		     {"expenses", env.getExpenses()}});
+		     {"expenses", env.getExpenses()},
+		     {"cloud", env.isCloud()}});
 	}
 
 	std::ofstream file(enveloppesPath);
@@ -77,7 +85,9 @@ void EnveloppeManager::saveEnveloppesToJson()
 
 void EnveloppeManager::addEnveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings)
 {
-	enveloppes.emplace_back(name, amount, maxAmount, goal, savings);
+	Enveloppe env(name, amount, maxAmount, goal, savings);
+	env.setCloud(false);
+	enveloppes.push_back(std::move(env));
 	saveEnveloppesToJson();
 }
 
@@ -124,12 +134,14 @@ void EnveloppeManager::transfer(std::string from, std::string to, int amount)
 	saveEnveloppesToJson();
 }
 
-void EnveloppeManager::addTypeAndExpense(const std::string &name, const Expense &e)
+void EnveloppeManager::addTypeAndExpense(const std::string &name, const Expense &e, bool rememberType)
 {
 	for ( auto &env : getEnveloppes() )
 		if ( env.getName() == name )
 		{
-			env.addType(e.info);
+			if ( rememberType )
+				env.addType(e.info);
+
 			addExpense(e, env);
 		}
 }
@@ -140,6 +152,19 @@ void EnveloppeManager::addExpense(Expense e, Enveloppe &env)
 	env.addExpense(e.amount);
 	env.addToExpenseVector(e);
 	saveEnveloppesToJson();
+}
+
+void EnveloppeManager::switchCloud(const std::string &name)
+{
+	for ( auto &env : getEnveloppes() )
+	{
+		if ( env.getName() == name )
+		{
+			env.setCloud(!env.isCloud());
+			saveEnveloppesToJson();
+			break;
+		}
+	}
 }
 
 void EnveloppeManager::moveEnveloppe(const std::string &name, bool up)
@@ -169,5 +194,67 @@ void EnveloppeManager::deleteEnveloppe(const std::string &name)
 	{
 		enveloppes.erase(it, enveloppes.end());
 		saveEnveloppesToJson();
+	}
+}
+
+void EnveloppeManager::moveExpenseToNewEnveloppe(const QString &date, const QString &amount, const QString &srcEnv, const QString &desc, const QString &destEnv)
+{
+	Expense expense = {};
+	std::istringstream iss(date.toStdString());
+	int y, m, d;
+	char sep1, sep2;
+	iss >> y >> sep1 >> m >> sep2 >> d;
+	expense.date = std::chrono::year{y} / std::chrono::month{static_cast<unsigned int>(m)} / std::chrono::day{static_cast<unsigned int>(d)};
+	expense.amount = amount.toInt();
+	expense.info = desc.toStdString();
+	expense.enveloppe = destEnv.toStdString();
+
+	addTypeAndExpense(destEnv.toStdString(), expense, false);
+	deleteExpense(date, amount, srcEnv, desc);
+}
+
+void EnveloppeManager::forgetExpenseType(const QString &enveloppe, const QString &desc)
+{
+	for (auto &env : enveloppes)
+	{
+		if (QString::fromStdString(env.getName()) != enveloppe)
+			continue;
+
+		auto &types = env.getTypes();
+		auto it = std::find(types.begin(), types.end(), desc.toStdString());
+
+		if (it != types.end())
+		{
+			types.erase(it);
+			saveEnveloppesToJson();
+		}
+
+		break;
+	}
+}
+
+void EnveloppeManager::deleteExpense(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc)
+{
+	for (auto &env : enveloppes)
+	{
+		if (QString::fromStdString(env.getName()) != enveloppe)
+			continue;
+
+		std::string target = (date + "|" + amount + "|" + desc).toStdString();
+		auto &expenses = env.getExpensesMutable();
+
+		auto it = std::find_if(expenses.begin(), expenses.end(), [&](const Expense &e) {
+			std::string current = std::format("{}|{}|{}", e.date, e.amount, e.info);
+			return current == target;
+		});
+
+		if (it != expenses.end())
+		{
+			expenses.erase(it);
+			env.setAmount(env.getAmount() - amount.toInt());
+			saveEnveloppesToJson();
+			forgetExpenseType(enveloppe, desc);
+			return;
+		}
 	}
 }

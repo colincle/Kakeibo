@@ -26,8 +26,9 @@ class EnveloppesUi : public QWidget
 
   public:
 	explicit EnveloppesUi(QWidget *parent = nullptr);
-	void showEnveloppes();
-	void addEnveloppe(std::string name);
+	void             showEnveloppes();
+	void             addEnveloppe(std::string name);
+	QList<QWidget *> getCloudCardWidgets() { return cloudCardWidgets; }
 
   protected:
 	void resizeEvent(QResizeEvent *event) override;
@@ -44,10 +45,11 @@ class EnveloppesUi : public QWidget
 		QCheckBox *savingsCheck   = nullptr;
 	};
 
-	QGridLayout *gridLayout          = nullptr;
-	QTimer      *resizeDebounceTimer = nullptr;
-	QScrollArea *scrollArea          = nullptr;
-	QWidget     *scrollContent       = nullptr;
+	QGridLayout     *gridLayout          = nullptr;
+	QTimer          *resizeDebounceTimer = nullptr;
+	QScrollArea     *scrollArea          = nullptr;
+	QWidget         *scrollContent       = nullptr;
+	QList<QWidget *> cloudCardWidgets;
 
 	void clearGrid();
 	int  computeColumnCount() const;
@@ -58,7 +60,7 @@ class EnveloppesUi : public QWidget
 	QVBoxLayout         *setupCardLayout(QWidget *card);
 	void                 addCardContent(QVBoxLayout *layout, const Enveloppe &env, const QString &barColor, int percent);
 	QWidget             *createCardButtons(const Enveloppe &env);
-	QList<QPushButton *> createCardButtonList();
+	QList<QPushButton *> createCardButtonList(const Enveloppe &env);
 	void                 connectCardButtons(const Enveloppe &env, const QList<QPushButton *> &buttons);
 	QWidget             *createProgressLabel(QString barColor, int percent);
 	QWidget             *createGoalMaxLabel(const Enveloppe &env);

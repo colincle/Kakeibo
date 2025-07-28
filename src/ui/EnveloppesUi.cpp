@@ -34,6 +34,7 @@ EnveloppesUi::EnveloppesUi(QWidget *parent) : QWidget(parent)
 	auto *outerLayout = new QVBoxLayout(scrollContent);
 	outerLayout->setContentsMargins(0, 0, 0, 0);
 	outerLayout->setSpacing(0);
+	outerLayout->insertSpacing(0, 8);
 
 	gridLayout = new QGridLayout;
 	gridLayout->setSpacing(10);
@@ -95,6 +96,8 @@ void EnveloppesUi::clearGrid()
 
 		delete item;
 	}
+
+	cloudCardWidgets.clear();
 }
 
 int EnveloppesUi::computeColumnCount() const
@@ -113,7 +116,11 @@ void EnveloppesUi::populateGrid(int columnCount)
 
 	for ( std::size_t i = 0; i < enveloppes.size(); ++i )
 	{
-		gridLayout->addWidget(createCard(enveloppes[i]), row, col++);
+		QWidget *card = createCard(enveloppes[i]);
+		gridLayout->addWidget(card, row, col++);
+
+		if ( enveloppes[i].isCloud() )
+			cloudCardWidgets.append(card);
 
 		if ( col == columnCount )
 		{
@@ -224,12 +231,13 @@ QWidget *EnveloppesUi::createCardButtons(const Enveloppe &env)
 	layout->setContentsMargins(5, 5, 5, 5);
 	layout->setSpacing(5);
 
-	auto buttons = createCardButtonList();
+	auto buttons = createCardButtonList(env);
 	layout->addWidget(buttons[0]);
 	layout->addWidget(buttons[1]);
 	layout->addStretch();
 	layout->addWidget(buttons[2]);
 	layout->addWidget(buttons[3]);
+	layout->addWidget(buttons[4]);
 
 	QString btnStyle = R"(
 		QPushButton {
@@ -249,7 +257,7 @@ QWidget *EnveloppesUi::createCardButtons(const Enveloppe &env)
 	return container;
 }
 
-QList<QPushButton *> EnveloppesUi::createCardButtonList()
+QList<QPushButton *> EnveloppesUi::createCardButtonList(const Enveloppe &env)
 {
 	auto makeBtn = [](const QString &iconPath)
 	{
@@ -262,6 +270,7 @@ QList<QPushButton *> EnveloppesUi::createCardButtonList()
 	return {
 	    makeBtn(CROSS_ICON),
 	    makeBtn(MODIFY_ICON),
+	    makeBtn(env.isCloud() ? CLOUD_BLUE_ICON : CLOUD_WHITE_ICON),
 	    makeBtn(LEFT_ICON),
 	    makeBtn(RIGHT_ICON)};
 }
@@ -274,11 +283,15 @@ void EnveloppesUi::connectCardButtons(const Enveloppe &env, const QList<QPushBut
 	        {
 		addEnveloppe(env.getName());
 		emit updateNeeded(); });
-	connect(buttons[2], &QPushButton::clicked, this, [this, env]()
+	connect(buttons[2], &QPushButton::clicked, this, [this, env]() mutable
+	        {
+		g_enveloppeManager.switchCloud(env.getName());
+		emit updateNeeded(); });
+	connect(buttons[3], &QPushButton::clicked, this, [this, env]()
 	        {
 		g_enveloppeManager.moveEnveloppe(env.getName(), true);
 		emit updateNeeded(); });
-	connect(buttons[3], &QPushButton::clicked, this, [this, env]()
+	connect(buttons[4], &QPushButton::clicked, this, [this, env]()
 	        {
 		g_enveloppeManager.moveEnveloppe(env.getName(), false);
 		emit updateNeeded(); });

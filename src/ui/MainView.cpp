@@ -1,4 +1,5 @@
 #include "MainView.hpp"
+#include "ConnectToCloud.hpp"
 #include "EnveloppesTransfer.hpp"
 #include "EnveloppesUi.hpp"
 #include "History.hpp"
@@ -30,6 +31,7 @@ MainView::MainView(MenuBar *menuBar, QWidget *parent) : QWidget(parent), menuBar
 
 	connect(menuBar, &MenuBar::menuButtonClicked, this, &MainView::handleMenuAction);
 	connect(enveloppesUI, &EnveloppesUi::updateNeeded, this, &MainView::updatePages);
+	connect(history, &History::updateNeeded, this, &MainView::updatePages);
 }
 
 void MainView::handleMenuAction(int index)
@@ -74,4 +76,5 @@ void MainView::updatePages()
 	history->showHistory();
 	stats->showStats();
 	menuBar.updateTotalLabel();
+	ConnectToCloud::sendCardsToCloud(enveloppesUI->getCloudCardWidgets());
 }
