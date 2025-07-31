@@ -17,6 +17,9 @@ class Enveloppe
 	bool                     cloud;
 
   public:
+	Enveloppe()
+	    : name(""), amount(0), maxAmount(0), goal(0), savings(0), types {} {}
+
 	Enveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings)
 	    : name(name), amount(amount), maxAmount(maxAmount), goal(goal), savings(savings), types {} {}
 

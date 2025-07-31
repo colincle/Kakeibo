@@ -16,6 +16,7 @@ class QPushButton;
 class QScrollArea;
 class QTimer;
 class QVBoxLayout;
+class QHBoxLayout;
 
 class EnveloppesUi : public QWidget
 {
@@ -50,12 +51,15 @@ class EnveloppesUi : public QWidget
 	QScrollArea     *scrollArea          = nullptr;
 	QWidget         *scrollContent       = nullptr;
 	QList<QWidget *> cloudCardWidgets;
+	QWidget *topInfoWidget = nullptr;
+	QHBoxLayout *topInfoLayout = nullptr;
 
 	void clearGrid();
 	int  computeColumnCount() const;
 	void populateGrid(int columnCount);
 	void restoreScroll(int savedScroll);
 
+	void showTopInfo();
 	QWidget             *createCard(const Enveloppe &env);
 	QVBoxLayout         *setupCardLayout(QWidget *card);
 	void                 addCardContent(QVBoxLayout *layout, const Enveloppe &env, const QString &barColor, int percent);

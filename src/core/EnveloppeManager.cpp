@@ -24,64 +24,125 @@ void EnveloppeManager::createPaths()
 	                                 : std::filesystem::path(std::getenv("HOME")) / ".local" / "share";
 	basePath                   = base / "kakeibo";
 	enveloppesPath             = basePath / "enveloppes.json";
+	specialEnveloppesPath             = basePath / "specialEnveloppes.json";
 	std::filesystem::create_directories(basePath);
 }
 
 void EnveloppeManager::getEnveloppesFromJson()
 {
-	if ( !std::filesystem::exists(enveloppesPath) )
+	if (!std::filesystem::exists(enveloppesPath))
 	{
 		std::ofstream file(enveloppesPath);
-		json          empty = json::object();
+		json empty = json::object();
 		file << empty.dump(4);
-		return;
 	}
-
-	std::ifstream file(enveloppesPath);
-	json          data = json::parse(file);
-
-	for ( const auto &item : data )
+	else
 	{
-		Enveloppe e(
-		    item.at("name").get<std::string>(),
-		    item.at("amount").get<int>(),
-		    item.at("maxAmount").get<int>(),
-		    item.at("goal").get<int>(),
-		    item.at("savings").get<bool>());
+		std::ifstream file(enveloppesPath);
+		json data = json::parse(file);
 
-		if ( item.contains("types") )
-			e.setTypes(item.at("types").get<std::vector<std::string>>());
-
-		if ( item.contains("expenses") )
-			e.setExpenses(item.at("expenses").get<std::vector<Expense>>());
-
-		if ( item.contains("cloud") )
-			e.setCloud(item.at("cloud").get<bool>());
-
-		enveloppes.push_back(std::move(e));
+		for (const auto &item : data)
+		{
+			Enveloppe e = importEnveloppe(item);
+			enveloppes.push_back(std::move(e));
+		}
 	}
+
+	json special;
+	bool changed = false;
+
+	if (std::filesystem::exists(specialEnveloppesPath))
+	{
+		std::ifstream specialFile(specialEnveloppesPath);
+		special = json::parse(specialFile);
+	}
+
+	if (!special.contains("Income"))
+	{
+		special["Income"] = {
+			{"name", "Revenus\n収入"},
+			{"amount", 0},
+			{"maxAmount", 0},
+			{"goal", 0},
+			{"savings", false}
+		};
+		changed = true;
+	}
+	if (!special.contains("Credit"))
+	{
+		special["Credit"] = {
+			{"name", "Crédit\nクレジット"},
+			{"amount", 0},
+			{"maxAmount", 0},
+			{"goal", 0},
+			{"savings", false}
+		};
+		changed = true;
+	}
+
+	incomeEnveloppe = importEnveloppe(special["Income"]);
+	creditEnveloppe = importEnveloppe(special["Credit"]);
+
+	if (changed)
+	{
+		std::ofstream outFile(specialEnveloppesPath);
+		outFile << special.dump(4);
+	}
+}
+
+
+Enveloppe EnveloppeManager::importEnveloppe(const json &item)
+{
+	Enveloppe e(
+				item.at("name").get<std::string>(),
+				item.at("amount").get<int>(),
+				item.at("maxAmount").get<int>(),
+				item.at("goal").get<int>(),
+				item.at("savings").get<bool>());
+
+	if ( item.contains("types") )
+		e.setTypes(item.at("types").get<std::vector<std::string>>());
+
+	if ( item.contains("expenses") )
+		e.setExpenses(item.at("expenses").get<std::vector<Expense>>());
+
+	if ( item.contains("cloud") )
+		e.setCloud(item.at("cloud").get<bool>());
+	return e;
 }
 
 void EnveloppeManager::saveEnveloppesToJson()
 {
 	json data = json::array();
 
-	for ( const auto &env : enveloppes )
-	{
-		data.push_back(
-		    {{"name", env.getName()},
-		     {"amount", env.getAmount()},
-		     {"maxAmount", env.getMaxAmount()},
-		     {"goal", env.getGoal()},
-		     {"savings", env.isSavings()},
-		     {"types", env.getTypes()},
-		     {"expenses", env.getExpenses()},
-		     {"cloud", env.isCloud()}});
-	}
+	for (const auto &env : enveloppes)
+		data.push_back(exportEnveloppe(env));
 
 	std::ofstream file(enveloppesPath);
 	file << data.dump(4);
+
+	json special;
+	special["Income"] = exportEnveloppe(incomeEnveloppe);
+	special["Credit"] = exportEnveloppe(creditEnveloppe);
+
+	std::ofstream specialFile(specialEnveloppesPath);
+	specialFile << special.dump(4);
 }
+
+json EnveloppeManager::exportEnveloppe(const Enveloppe &env)
+{
+	return {
+		{"name", env.getName()},
+		{"amount", env.getAmount()},
+		{"maxAmount", env.getMaxAmount()},
+		{"goal", env.getGoal()},
+		{"savings", env.isSavings()},
+		{"types", env.getTypes()},
+		{"expenses", env.getExpenses()},
+		{"cloud", env.isCloud()}
+	};
+}
+
 
 void EnveloppeManager::addEnveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings)
 {

@@ -31,10 +31,18 @@
 EnveloppesUi::EnveloppesUi(QWidget *parent) : QWidget(parent)
 {
 	scrollContent     = new QWidget(this);
+
+	topInfoWidget = new QWidget(this);
+	topInfoLayout = new QHBoxLayout(topInfoWidget);
+	topInfoLayout->setContentsMargins(20, 10, 20, 10);
+	topInfoLayout->setSpacing(10);
+
 	auto *outerLayout = new QVBoxLayout(scrollContent);
+
+	outerLayout->insertWidget(0, topInfoWidget);
 	outerLayout->setContentsMargins(0, 0, 0, 0);
 	outerLayout->setSpacing(0);
-	outerLayout->insertSpacing(0, 8);
+	// outerLayout->insertSpacing(0, 5);
 
 	gridLayout = new QGridLayout;
 	gridLayout->setSpacing(10);
@@ -78,6 +86,8 @@ void EnveloppesUi::showEnveloppes()
 	int savedScroll = scrollArea->verticalScrollBar()->value();
 	clearGrid();
 
+	showTopInfo();
+
 	int columnCount = computeColumnCount();
 
 	populateGrid(columnCount);
@@ -99,6 +109,46 @@ void EnveloppesUi::clearGrid()
 
 	cloudCardWidgets.clear();
 }
+
+void EnveloppesUi::showTopInfo()
+{
+	topInfoLayout->setAlignment(Qt::AlignTop);
+	topInfoLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+	topInfoLayout->setSpacing(40);
+
+	for (QLayoutItem *item; (item = topInfoLayout->takeAt(0));)
+	{
+		delete item->widget();
+		delete item;
+	}
+
+	const auto &income = g_enveloppeManager.getIncomeEnveloppe();
+	const auto &credit = g_enveloppeManager.getCreditEnveloppe();
+
+	auto addEntry = [this](const Enveloppe &env) {
+	QString name = QString::fromStdString(env.getName()).replace("\n", " ");
+
+		QLocale jp(QLocale::Japanese, QLocale::Japan);
+		QLocale fr(QLocale::French, QLocale::France);
+		float   rate = getEurJpyRateCached();
+
+		QString jpy = "¥ " + jp.toString(env.getAmount());
+		QString eur = rate > 0 ? "€ " + fr.toString(env.getAmount() / rate, 'f', 2) : "-€";
+
+		auto *label = new QLabel(name + " — " + jpy + " / " + eur);
+		label->setStyleSheet(R"(
+			font-family: 'Helvetica Neue';
+			font-weight: 100;
+			color: #E1E1E2;
+			font-size: 18px;
+		)");
+		topInfoLayout->addWidget(label);
+	};
+
+	addEntry(income);
+	addEntry(credit);
+}
+
 
 int EnveloppesUi::computeColumnCount() const
 {

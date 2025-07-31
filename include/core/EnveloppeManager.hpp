@@ -12,8 +12,11 @@ class EnveloppeManager
 {
   public:
 	EnveloppeManager();
-
 	std::vector<Enveloppe> &getEnveloppes() { return enveloppes; }
+	Enveloppe &getIncomeEnveloppe() { return incomeEnveloppe; }
+	Enveloppe &getCreditEnveloppe() { return creditEnveloppe; }
+
+
 
 	void                  addEnveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings);
 	void                  modifyEnveloppe(const std::string &oldName, const std::string &name, int amount, int maxAmount, int goal, bool savings);
@@ -31,10 +34,15 @@ class EnveloppeManager
 
   private:
 	std::vector<Enveloppe> enveloppes;
+	Enveloppe creditEnveloppe;
+	Enveloppe incomeEnveloppe;
 	std::filesystem::path  basePath;
 	std::filesystem::path  enveloppesPath;
+	std::filesystem::path  specialEnveloppesPath;
 
 	void createPaths();
 	void getEnveloppesFromJson();
+	Enveloppe importEnveloppe(const json &item);
 	void saveEnveloppesToJson();
+	json exportEnveloppe(const Enveloppe &env);
 };
