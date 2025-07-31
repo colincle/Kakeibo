@@ -6,6 +6,7 @@
 #include "ImportExpenses.hpp"
 #include "MenuBar.hpp"
 #include "Stats.hpp"
+#include "Backups.hpp"
 
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -14,6 +15,8 @@ MainView::MainView(MenuBar *menuBar, QWidget *parent) : QWidget(parent), menuBar
 {
 	QVBoxLayout *layout = new QVBoxLayout(this);
 	layout->setContentsMargins(3, 0, 3, 0);
+	
+	Backups::backup();
 
 	stack = new QStackedWidget(this);
 	layout->addWidget(stack);

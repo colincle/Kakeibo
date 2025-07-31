@@ -151,7 +151,7 @@ void History::handleRightClick(const QString &date, const QString &amount, const
 			continue ;
 		QAction *action = moveMenu->addAction(name);
 		moveMenu->addSeparator();
-		connect(action, &QAction::triggered, this, [=]() {
+		connect(action, &QAction::triggered, this, [=, this]() {
 			g_enveloppeManager.moveExpenseToNewEnveloppe(date, amount, enveloppe, desc, name);
 			emit updateNeeded();
 		});
