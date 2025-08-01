@@ -23,24 +23,27 @@ void ConnectToCloud::sendCardsToCloud(const QList<QWidget *> &cloudWidgets)
 	static QList<QList<QWidget *>> queue;
 	static bool                    running = false;
 
-	QString destPath = getPath();
+	QString      destPath = getPath();
 	QMutexLocker locker(&mutex);
 	queue.append(cloudWidgets);
-	if (running)
+	if ( running )
 		return;
 	running = true;
 
-	[[maybe_unused]] auto future = QtConcurrent::run([destPath, cloudWidgets]() mutable {
-		while (true)
+	[[maybe_unused]] auto future = QtConcurrent::run([destPath, cloudWidgets]() mutable
+	                                                 {
+		while(true)
 		{
 			QList<QWidget *> task;
 			{
 				QMutexLocker innerLocker(&mutex);
-				if (queue.isEmpty())
+
+				if(queue.isEmpty())
 				{
 					running = false;
 					break;
 				}
+
 				task = queue.takeLast();
 				queue.clear();
 			}
@@ -48,8 +51,7 @@ void ConnectToCloud::sendCardsToCloud(const QList<QWidget *> &cloudWidgets)
 			QList<QPixmap> screenshots = takeScreenshots(task);
 			QPixmap image = assembleIntoIPhoneShape(screenshots);
 			image.save(destPath + "/Kakeibo.png");
-		}
-	});
+		} });
 }
 
 QString ConnectToCloud::getPath()
@@ -69,6 +71,7 @@ QString ConnectToCloud::getPath()
 			newFile.close();
 		}
 	}
+
 	QFile file(jsonPath);
 
 	if ( !file.open(QIODevice::ReadOnly) )
@@ -94,8 +97,10 @@ QString ConnectToCloud::getPath()
 			file.write(QJsonDocument(newObj).toJson());
 			file.close();
 		}
+
 		return chosenDir;
 	}
+
 	return storedPath;
 }
 
@@ -109,12 +114,11 @@ QList<QPixmap> ConnectToCloud::takeScreenshots(const QList<QWidget *> &widgets)
 
 	for ( QWidget *w : widgets )
 	{
-        QPixmap original;
-        QMetaObject::invokeMethod(QApplication::instance(), [&]() {
-            original = w->grab();
-        }, Qt::BlockingQueuedConnection);
-		int     width    = original.width();
-		int     height   = original.height();
+		QPixmap original;
+		QMetaObject::invokeMethod(QApplication::instance(), [&]()
+		                          { original = w->grab(); }, Qt::BlockingQueuedConnection);
+		int width  = original.width();
+		int height = original.height();
 
 		int x             = 0;
 		int y             = cropTop;

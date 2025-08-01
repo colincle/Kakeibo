@@ -175,11 +175,12 @@ void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 	auto &enveloppes = g_enveloppeManager.getEnveloppes();
 	bool  matched    = false;
 
-	if (e.amount > 0)
+	if ( e.amount > 0 )
 	{
 		g_enveloppeManager.addExpense(e, g_enveloppeManager.getIncomeEnveloppe());
-		return ;
+		return;
 	}
+
 	for ( auto &env : enveloppes )
 	{
 		for ( const std::string &type : env.getTypes() )

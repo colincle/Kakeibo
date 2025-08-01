@@ -50,6 +50,8 @@ void MenuBar::updateTotalLabel()
 	for ( const auto &e : g_enveloppeManager.getEnveloppes() )
 		total += e.getAmount();
 
+	total += g_enveloppeManager.getIncomeEnveloppe().getAmount();
+
 	QLocale jp(QLocale::Japanese, QLocale::Japan);
 	QString formattedYen = jp.toString(total);
 
@@ -103,7 +105,7 @@ void MenuBar::addActionsButtons(QHBoxLayout *layout)
 		layout->addWidget(btn);
 		buttons.append(btn);
 
-		int index = i + 3;
+		int index = i + 4; // This magic number is the amount of pages buttons that come before
 		connect(btn, &QPushButton::clicked, this, [this, index]()
 		        { emit menuButtonClicked(index); });
 	}
@@ -116,6 +118,7 @@ void MenuBar::addPagesButtons(QHBoxLayout *layout)
 	        "Enveloppes\n封筒",
 	        "Historique\n履歴",
 	        "Statistiques\n統計",
+	        "Repartition\n振り分け",
 	    };
 
 	for ( int i = 0; i < labels.size(); ++i )

@@ -30,7 +30,7 @@
 
 EnveloppesUi::EnveloppesUi(QWidget *parent) : QWidget(parent)
 {
-	scrollContent     = new QWidget(this);
+	scrollContent = new QWidget(this);
 
 	topInfoWidget = new QWidget(this);
 	topInfoLayout = new QHBoxLayout(topInfoWidget);
@@ -42,7 +42,6 @@ EnveloppesUi::EnveloppesUi(QWidget *parent) : QWidget(parent)
 	outerLayout->insertWidget(0, topInfoWidget);
 	outerLayout->setContentsMargins(0, 0, 0, 0);
 	outerLayout->setSpacing(0);
-	// outerLayout->insertSpacing(0, 5);
 
 	gridLayout = new QGridLayout;
 	gridLayout->setSpacing(10);
@@ -116,7 +115,7 @@ void EnveloppesUi::showTopInfo()
 	topInfoLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 	topInfoLayout->setSpacing(40);
 
-	for (QLayoutItem *item; (item = topInfoLayout->takeAt(0));)
+	for ( QLayoutItem *item; (item = topInfoLayout->takeAt(0)); )
 	{
 		delete item->widget();
 		delete item;
@@ -125,8 +124,9 @@ void EnveloppesUi::showTopInfo()
 	const auto &income = g_enveloppeManager.getIncomeEnveloppe();
 	const auto &credit = g_enveloppeManager.getCreditEnveloppe();
 
-	auto addEntry = [this](const Enveloppe &env) {
-	QString name = QString::fromStdString(env.getName()).replace("\n", " ");
+	auto addEntry = [this](const Enveloppe &env)
+	{
+		QString name = QString::fromStdString(env.getName()).replace("\n", " ");
 
 		QLocale jp(QLocale::Japanese, QLocale::Japan);
 		QLocale fr(QLocale::French, QLocale::France);
@@ -148,7 +148,6 @@ void EnveloppesUi::showTopInfo()
 	addEntry(income);
 	addEntry(credit);
 }
-
 
 int EnveloppesUi::computeColumnCount() const
 {

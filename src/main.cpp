@@ -16,8 +16,8 @@ QWidget *createMainWindow()
 	window->setAutoFillBackground(true);
 	window->setStyleSheet("background-color: #242F32;");
 	window->setWindowTitle("Kakeibo");
-	window->resize(1110, 850);
-	window->setMinimumSize(840, 420);
+	window->resize(1110, 875);
+	window->setMinimumSize(860, 420);
 	return window;
 }
 

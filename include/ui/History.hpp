@@ -19,7 +19,7 @@ class History : public QWidget
 {
 	Q_OBJECT
 
- signals:
+  signals:
 	void updateNeeded();
 
   public:

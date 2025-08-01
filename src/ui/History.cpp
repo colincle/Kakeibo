@@ -117,10 +117,10 @@ void History::setUpTable(QTableWidget *table)
 	table->setStyleSheet(setTableStyleSheet());
 	table->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(table, &QTableWidget::customContextMenuRequested, this, [this, table](const QPoint &pos)
-	{
+	        {
 		int row = table->rowAt(pos.y());
 
-		if (row < 0)
+		if(row < 0)
 			return;
 
 		QString date = table->item(row, 0)->data(Qt::UserRole).toString();
@@ -128,8 +128,7 @@ void History::setUpTable(QTableWidget *table)
 		QString enveloppe = table->item(row, 2)->data(Qt::UserRole).toString();
 		QString desc = table->item(row, 3)->data(Qt::UserRole).toString();
 
-		handleRightClick(date, amount, enveloppe, desc);
-	});
+		handleRightClick(date, amount, enveloppe, desc); });
 }
 
 void History::handleRightClick(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc)
@@ -144,17 +143,20 @@ void History::handleRightClick(const QString &date, const QString &amount, const
 	)");
 
 	QMenu *moveMenu = menu->addMenu("Déplacer vers une autre enveloppe / 別の封筒に移動");
-	for (const auto &env : g_enveloppeManager.getEnveloppes())
+
+	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
 	{
 		QString name = QString::fromStdString(env.getName());
-		if (name == enveloppe)
-			continue ;
+
+		if ( name == enveloppe )
+			continue;
+
 		QAction *action = moveMenu->addAction(name);
 		moveMenu->addSeparator();
-		connect(action, &QAction::triggered, this, [=, this]() {
+		connect(action, &QAction::triggered, this, [=, this]()
+		        {
 			g_enveloppeManager.moveExpenseToNewEnveloppe(date, amount, enveloppe, desc, name);
-			emit updateNeeded();
-		});
+			emit updateNeeded(); });
 	}
 
 	menu->addSeparator();
@@ -164,17 +166,16 @@ void History::handleRightClick(const QString &date, const QString &amount, const
 
 	QAction *selection = menu->exec(QCursor::pos());
 
-	if (selection == forgetAction)
+	if ( selection == forgetAction )
 	{
 		g_enveloppeManager.forgetExpenseType(enveloppe, desc);
 		emit updateNeeded();
 	}
-	else if (selection == deleteAction)
+	else if ( selection == deleteAction )
 	{
 		g_enveloppeManager.deleteExpense(date, amount, enveloppe, desc);
 		emit updateNeeded();
 	}
-
 }
 
 QString History::setTableStyleSheet()
@@ -258,36 +259,35 @@ void History::fillTableWithExpenses(QTableWidget *table, const std::vector<Expen
 {
 	QLocale jp(QLocale::Japanese, QLocale::Japan);
 
-	for (const auto &exp : expenses)
+	for ( const auto &exp : expenses )
 	{
 		int row = table->rowCount();
 		table->insertRow(row);
 
 		QString originalDate = QString::fromStdString(std::format("{}", exp.date));
-		auto *dateItem = new QTableWidgetItem(originalDate);
+		auto   *dateItem     = new QTableWidgetItem(originalDate);
 		dateItem->setData(Qt::UserRole, originalDate);
 		table->setItem(row, 0, dateItem);
 
 		QString formattedAmount = QString("¥%1").arg(jp.toString(exp.amount));
-		auto *amountItem = new QTableWidgetItem(formattedAmount);
+		auto   *amountItem      = new QTableWidgetItem(formattedAmount);
 		amountItem->setForeground(QBrush(QColor(exp.amount < 0 ? "#FA5E57" : "#337BFF")));
 		amountItem->setData(Qt::UserRole, QString::number(exp.amount));
 		table->setItem(row, 1, amountItem);
 
 		QString originalEnv = QString::fromStdString(exp.enveloppe);
-		QString displayEnv = originalEnv;
+		QString displayEnv  = originalEnv;
 		displayEnv.replace('\n', ' ');
 		auto *envItem = new QTableWidgetItem(displayEnv);
 		envItem->setData(Qt::UserRole, originalEnv);
 		table->setItem(row, 2, envItem);
 
 		QString originalInfo = QString::fromStdString(exp.info);
-		auto *descItem = new QTableWidgetItem(originalInfo);
+		auto   *descItem     = new QTableWidgetItem(originalInfo);
 		descItem->setData(Qt::UserRole, originalInfo);
 		table->setItem(row, 3, descItem);
 	}
 }
-
 
 void History::updateGlobalDateRange()
 {

@@ -2,10 +2,10 @@
 
 #include "EnveloppeManager.hpp"
 
-#include <cstdlib>
 #include <cstdio>
-#include <string>
+#include <cstdlib>
 #include <sstream>
+#include <string>
 
 #include <QEventLoop>
 #include <QJsonDocument>
@@ -58,39 +58,49 @@ inline float getEurJpyRateBlocking()
 
 	reply->deleteLater();
 
-	if (rate == -1.0f)
+	if ( rate == -1.0f )
 		rate = fallbackRate();
+
 	return rate;
 }
 
 inline float fallbackRate()
 {
-	FILE* pipe = popen(R"(curl -s "https://wise.com/gb/currency-converter/eur-to-jpy-rate")", "r");
-	if (!pipe) return -1.0f;
+	FILE *pipe = popen(R"(curl -s "https://wise.com/gb/currency-converter/eur-to-jpy-rate")", "r");
 
-	char buffer[4096];
+	if ( !pipe )
+		return -1.0f;
+
+	char        buffer[4096];
 	std::string html;
 
-	while (fgets(buffer, sizeof(buffer), pipe))
+	while ( fgets(buffer, sizeof(buffer), pipe) )
 		html += buffer;
 
 	pclose(pipe);
 
 	std::string markerStart = ">€1 EUR = ";
-	std::string markerEnd = " JPY<";
+	std::string markerEnd   = " JPY<";
 
 	auto start = html.find(markerStart);
-	if (start == std::string::npos) return -1.0f;
+
+	if ( start == std::string::npos )
+		return -1.0f;
+
 	start += markerStart.length();
 
 	auto end = html.find(markerEnd, start);
-	if (end == std::string::npos) return -1.0f;
 
-	std::string rateStr = html.substr(start, end - start);
+	if ( end == std::string::npos )
+		return -1.0f;
+
+	std::string       rateStr = html.substr(start, end - start);
 	std::stringstream ss(rateStr);
-	float rate = -1.0f;
+	float             rate = -1.0f;
 	ss >> rate;
-	if (ss.fail()) return -1.0f;
+
+	if ( ss.fail() )
+		return -1.0f;
+
 	return rate;
 }
-

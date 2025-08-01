@@ -3,8 +3,8 @@
 
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <format>
+#include <fstream>
 
 #include <QString>
 
@@ -24,24 +24,24 @@ void EnveloppeManager::createPaths()
 	                                 : std::filesystem::path(std::getenv("HOME")) / ".local" / "share";
 	basePath                   = base / "kakeibo";
 	enveloppesPath             = basePath / "enveloppes.json";
-	specialEnveloppesPath             = basePath / "specialEnveloppes.json";
+	specialEnveloppesPath      = basePath / "specialEnveloppes.json";
 	std::filesystem::create_directories(basePath);
 }
 
 void EnveloppeManager::getEnveloppesFromJson()
 {
-	if (!std::filesystem::exists(enveloppesPath))
+	if ( !std::filesystem::exists(enveloppesPath) )
 	{
 		std::ofstream file(enveloppesPath);
-		json empty = json::object();
+		json          empty = json::object();
 		file << empty.dump(4);
 	}
 	else
 	{
 		std::ifstream file(enveloppesPath);
-		json data = json::parse(file);
+		json          data = json::parse(file);
 
-		for (const auto &item : data)
+		for ( const auto &item : data )
 		{
 			Enveloppe e = importEnveloppe(item);
 			enveloppes.push_back(std::move(e));
@@ -51,54 +51,54 @@ void EnveloppeManager::getEnveloppesFromJson()
 	json special;
 	bool changed = false;
 
-	if (std::filesystem::exists(specialEnveloppesPath))
+	if ( std::filesystem::exists(specialEnveloppesPath) )
 	{
 		std::ifstream specialFile(specialEnveloppesPath);
 		special = json::parse(specialFile);
 	}
 
-	if (!special.contains("Income"))
+	if ( !special.contains("Income") )
 	{
-		special["Income"] = {
-			{"name", "Revenus\n収入"},
-			{"amount", 0},
-			{"maxAmount", 0},
-			{"goal", 0},
-			{"savings", false}
-		};
+		special["Income"] =
+		    {
+		        {"name", "Revenus\n収入"},
+		        {"amount", 0},
+		        {"maxAmount", 0},
+		        {"goal", 0},
+		        {"savings", false}};
 		changed = true;
 	}
-	if (!special.contains("Credit"))
+
+	if ( !special.contains("Credit") )
 	{
-		special["Credit"] = {
-			{"name", "Crédit\nクレジット"},
-			{"amount", 0},
-			{"maxAmount", 0},
-			{"goal", 0},
-			{"savings", false}
-		};
+		special["Credit"] =
+		    {
+		        {"name", "Crédit\nクレジット"},
+		        {"amount", 0},
+		        {"maxAmount", 0},
+		        {"goal", 0},
+		        {"savings", false}};
 		changed = true;
 	}
 
 	incomeEnveloppe = importEnveloppe(special["Income"]);
 	creditEnveloppe = importEnveloppe(special["Credit"]);
 
-	if (changed)
+	if ( changed )
 	{
 		std::ofstream outFile(specialEnveloppesPath);
 		outFile << special.dump(4);
 	}
 }
 
-
 Enveloppe EnveloppeManager::importEnveloppe(const json &item)
 {
 	Enveloppe e(
-				item.at("name").get<std::string>(),
-				item.at("amount").get<int>(),
-				item.at("maxAmount").get<int>(),
-				item.at("goal").get<int>(),
-				item.at("savings").get<bool>());
+	    item.at("name").get<std::string>(),
+	    item.at("amount").get<int>(),
+	    item.at("maxAmount").get<int>(),
+	    item.at("goal").get<int>(),
+	    item.at("savings").get<bool>());
 
 	if ( item.contains("types") )
 		e.setTypes(item.at("types").get<std::vector<std::string>>());
@@ -115,7 +115,7 @@ void EnveloppeManager::saveEnveloppesToJson()
 {
 	json data = json::array();
 
-	for (const auto &env : enveloppes)
+	for ( const auto &env : enveloppes )
 		data.push_back(exportEnveloppe(env));
 
 	std::ofstream file(enveloppesPath);
@@ -132,17 +132,15 @@ void EnveloppeManager::saveEnveloppesToJson()
 json EnveloppeManager::exportEnveloppe(const Enveloppe &env)
 {
 	return {
-		{"name", env.getName()},
-		{"amount", env.getAmount()},
-		{"maxAmount", env.getMaxAmount()},
-		{"goal", env.getGoal()},
-		{"savings", env.isSavings()},
-		{"types", env.getTypes()},
-		{"expenses", env.getExpenses()},
-		{"cloud", env.isCloud()}
-	};
+	    {"name", env.getName()},
+	    {"amount", env.getAmount()},
+	    {"maxAmount", env.getMaxAmount()},
+	    {"goal", env.getGoal()},
+	    {"savings", env.isSavings()},
+	    {"types", env.getTypes()},
+	    {"expenses", env.getExpenses()},
+	    {"cloud", env.isCloud()}};
 }
-
 
 void EnveloppeManager::addEnveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings)
 {
@@ -260,14 +258,14 @@ void EnveloppeManager::deleteEnveloppe(const std::string &name)
 
 void EnveloppeManager::moveExpenseToNewEnveloppe(const QString &date, const QString &amount, const QString &srcEnv, const QString &desc, const QString &destEnv)
 {
-	Expense expense = {};
+	Expense            expense = {};
 	std::istringstream iss(date.toStdString());
-	int y, m, d;
-	char sep1, sep2;
+	int                y, m, d;
+	char               sep1, sep2;
 	iss >> y >> sep1 >> m >> sep2 >> d;
-	expense.date = std::chrono::year{y} / std::chrono::month{static_cast<unsigned int>(m)} / std::chrono::day{static_cast<unsigned int>(d)};
-	expense.amount = amount.toInt();
-	expense.info = desc.toStdString();
+	expense.date      = std::chrono::year {y} / std::chrono::month {static_cast<unsigned int>(m)} / std::chrono::day {static_cast<unsigned int>(d)};
+	expense.amount    = amount.toInt();
+	expense.info      = desc.toStdString();
 	expense.enveloppe = destEnv.toStdString();
 
 	addTypeAndExpense(destEnv.toStdString(), expense, false);
@@ -276,15 +274,15 @@ void EnveloppeManager::moveExpenseToNewEnveloppe(const QString &date, const QStr
 
 void EnveloppeManager::forgetExpenseType(const QString &enveloppe, const QString &desc)
 {
-	for (auto &env : enveloppes)
+	for ( auto &env : enveloppes )
 	{
-		if (QString::fromStdString(env.getName()) != enveloppe)
+		if ( QString::fromStdString(env.getName()) != enveloppe )
 			continue;
 
 		auto &types = env.getTypes();
-		auto it = std::find(types.begin(), types.end(), desc.toStdString());
+		auto  it    = std::find(types.begin(), types.end(), desc.toStdString());
 
-		if (it != types.end())
+		if ( it != types.end() )
 		{
 			types.erase(it);
 			saveEnveloppesToJson();
@@ -296,20 +294,20 @@ void EnveloppeManager::forgetExpenseType(const QString &enveloppe, const QString
 
 void EnveloppeManager::deleteExpense(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc)
 {
-	for (auto &env : enveloppes)
+	for ( auto &env : enveloppes )
 	{
-		if (QString::fromStdString(env.getName()) != enveloppe)
+		if ( QString::fromStdString(env.getName()) != enveloppe )
 			continue;
 
-		std::string target = (date + "|" + amount + "|" + desc).toStdString();
-		auto &expenses = env.getExpensesMutable();
+		std::string target   = (date + "|" + amount + "|" + desc).toStdString();
+		auto       &expenses = env.getExpensesMutable();
 
-		auto it = std::find_if(expenses.begin(), expenses.end(), [&](const Expense &e) {
+		auto it = std::find_if(expenses.begin(), expenses.end(), [&](const Expense &e)
+		                       {
 			std::string current = std::format("{}|{}|{}", e.date, e.amount, e.info);
-			return current == target;
-		});
+			return current == target; });
 
-		if (it != expenses.end())
+		if ( it != expenses.end() )
 		{
 			expenses.erase(it);
 			env.setAmount(env.getAmount() - amount.toInt());

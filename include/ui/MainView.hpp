@@ -8,6 +8,7 @@ class EnveloppesUi;
 class History;
 class Stats;
 class MenuBar;
+class Dispatch;
 
 class MainView : public QWidget
 {
@@ -21,6 +22,7 @@ class MainView : public QWidget
 	EnveloppesUi   *enveloppesUI = nullptr;
 	History        *history      = nullptr;
 	Stats          *stats        = nullptr;
+	Dispatch       *dispatch     = nullptr;
 	MenuBar        &menuBar;
 
 	void handleMenuAction(int i);

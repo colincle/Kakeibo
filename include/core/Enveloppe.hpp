@@ -23,16 +23,16 @@ class Enveloppe
 	Enveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings)
 	    : name(name), amount(amount), maxAmount(maxAmount), goal(goal), savings(savings), types {} {}
 
-	const std::string          &getName() const { return name; }
-	int                         getAmount() const { return amount; }
-	int                         getMaxAmount() const { return maxAmount; }
-	int                         getGoal() const { return goal; }
-	std::vector<std::string>& getTypes() { return types; }
-	const std::vector<std::string>& getTypes() const { return types; }
-	bool                        isSavings() const { return savings; }
-	const std::vector<Expense> &getExpenses() const { return expenses; }
-	std::vector<Expense> &getExpensesMutable() { return expenses; }
-	bool                        isCloud() const { return cloud; }
+	const std::string              &getName() const { return name; }
+	int                             getAmount() const { return amount; }
+	int                             getMaxAmount() const { return maxAmount; }
+	int                             getGoal() const { return goal; }
+	std::vector<std::string>       &getTypes() { return types; }
+	const std::vector<std::string> &getTypes() const { return types; }
+	bool                            isSavings() const { return savings; }
+	const std::vector<Expense>     &getExpenses() const { return expenses; }
+	std::vector<Expense>           &getExpensesMutable() { return expenses; }
+	bool                            isCloud() const { return cloud; }
 
 	void setName(const std::string &newName) { name = newName; }
 	void setAmount(int newAmount) { amount = newAmount; }
