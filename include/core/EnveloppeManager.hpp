@@ -12,6 +12,9 @@ class EnveloppeManager
 {
   public:
 	EnveloppeManager();
+	EnveloppeManager(const EnveloppeManager &other);
+	EnveloppeManager &operator=(const EnveloppeManager &other);
+
 	std::vector<Enveloppe> &getEnveloppes() { return enveloppes; }
 	Enveloppe              &getIncomeEnveloppe() { return incomeEnveloppe; }
 	Enveloppe              &getCreditEnveloppe() { return creditEnveloppe; }

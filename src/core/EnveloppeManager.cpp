@@ -16,6 +16,31 @@ EnveloppeManager::EnveloppeManager()
 	getEnveloppesFromJson();
 }
 
+EnveloppeManager::EnveloppeManager(const EnveloppeManager &other)
+    : enveloppes(other.enveloppes),
+      creditEnveloppe(other.creditEnveloppe),
+      incomeEnveloppe(other.incomeEnveloppe),
+      basePath(other.basePath),
+      enveloppesPath(other.enveloppesPath),
+      specialEnveloppesPath(other.specialEnveloppesPath)
+{
+}
+
+EnveloppeManager &EnveloppeManager::operator=(const EnveloppeManager &other)
+{
+	if ( this != &other )
+	{
+		enveloppes            = other.enveloppes;
+		creditEnveloppe       = other.creditEnveloppe;
+		incomeEnveloppe       = other.incomeEnveloppe;
+		basePath              = other.basePath;
+		enveloppesPath        = other.enveloppesPath;
+		specialEnveloppesPath = other.specialEnveloppesPath;
+	}
+
+	return *this;
+}
+
 void EnveloppeManager::createPaths()
 {
 	const char           *xdg  = std::getenv("XDG_DATA_HOME");
