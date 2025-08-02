@@ -4,8 +4,8 @@
 #include <QString>
 
 // Bundled app
-#define ASSETS_PATH     (QCoreApplication::applicationDirPath() + "/../Resources/assets/")
-#define ICONS_PATH      (ASSETS_PATH + "icons/")
+#define ASSETS_PATH (QCoreApplication::applicationDirPath() + "/../Resources/assets/")
+#define ICONS_PATH (ASSETS_PATH + "icons/")
 
 #define CROSS_ICON (ICONS_PATH + QStringLiteral("Cross.png"))
 #define LEFT_ICON (ICONS_PATH + QStringLiteral("Left.png"))

@@ -104,23 +104,20 @@ void Dispatch::appendIncomeRow(Enveloppe &env)
 	buttonsLayout->addWidget(dispatchBtn);
 	rowLayout->addLayout(buttonsLayout);
 
-	connect(applyBtn, &QPushButton::clicked, this, [this]() {
-		dispatchIncomeEvenly();
-	});
+	connect(applyBtn, &QPushButton::clicked, this, [this]()
+	        { dispatchIncomeEvenly(); });
 
-	connect(dispatchBtn, &QPushButton::clicked, this, [this]() {
-		apply();
-	});
+	connect(dispatchBtn, &QPushButton::clicked, this, [this]()
+	        { apply(); });
 
 	incomeRow = {rowWidget, amountLabel, nullptr, nullptr, &env};
 
 	updateRow(incomeRow);
 }
 
-
 void Dispatch::apply()
 {
-	for (auto &env : dispatchManagerCopy.getEnveloppes())
+	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
 	{
 		env.setLocked(false);
 
@@ -129,15 +126,14 @@ void Dispatch::apply()
 	}
 
 	auto &originalEnvs = g_enveloppeManager.getEnveloppes();
-	originalEnvs = dispatchManagerCopy.getEnveloppes();
+	originalEnvs       = dispatchManagerCopy.getEnveloppes();
 
 	auto &originalIncome = g_enveloppeManager.getIncomeEnveloppe();
-	auto &copyIncome = dispatchManagerCopy.getIncomeEnveloppe();
+	auto &copyIncome     = dispatchManagerCopy.getIncomeEnveloppe();
 	originalIncome.setAmount(copyIncome.getAmount());
 
 	emit updateNeeded();
 }
-
 
 void Dispatch::dispatchIncomeEvenly()
 {
@@ -251,13 +247,11 @@ void Dispatch::appendRow(Enveloppe &env, EnveloppeManager &allEnvs)
 	amountLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 	rowLayout->addWidget(amountLabel);
 
-
 	auto *bar = new QProgressBar;
 	bar->setMinimumWidth(150);
 	bar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	bar->setTextVisible(false);
 	rowLayout->addWidget(bar);
-
 
 	auto *percentLabel = new QLabel;
 	rowLayout->addWidget(percentLabel);
@@ -319,7 +313,6 @@ void Dispatch::addProgressBar(QHBoxLayout *rowLayout, int amount, int goal)
 	percentLabel->setMinimumWidth(40);
 	rowLayout->addWidget(percentLabel);
 }
-
 
 void Dispatch::addButtons(QHBoxLayout *rowLayout, Enveloppe *env, EnveloppeManager &allEnvs)
 {
