@@ -48,3 +48,10 @@ int main(int argc, char *argv[])
 	window->show();
 	return app.exec();
 }
+/*
+TO DO 
+Total check
+credit
+weird left border on tab click
+refactor WIP
+*/

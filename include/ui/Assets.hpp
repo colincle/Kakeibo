@@ -21,6 +21,8 @@
 #define UNLOCKED_ICON (ICONS_PATH + QStringLiteral("Unlocked.png"))
 #define INCREMENT_ICON (ICONS_PATH + QStringLiteral("Increment.png"))
 #define DECREMENT_ICON (ICONS_PATH + QStringLiteral("Decrement.png"))
+#define UNDO_ICON (ICONS_PATH + QStringLiteral("Undo.png"))
+#define REDO_ICON (ICONS_PATH + QStringLiteral("Redo.png"))
 
 // Developpement
 // static QString ICONS_PATH = "../assets/icons/";
@@ -39,3 +41,5 @@
 // #define UNLOCKED_ICON (ICONS_PATH + "Unlocked.png")
 // #define INCREMENT_ICON (ICONS_PATH + "Increment.png")
 // #define DECREMENT_ICON (ICONS_PATH + "Decrement.png")
+// #define UNDO_ICON (ICONS_PATH + "Undo.png")
+// #define REDO_ICON (ICONS_PATH + "Redo.png")

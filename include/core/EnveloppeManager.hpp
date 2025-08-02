@@ -30,7 +30,7 @@ class EnveloppeManager
 	void moveExpenseToNewEnveloppe(const QString &date, const QString &amount, const QString &srcEnv, const QString &desc, const QString &destEnv);
 	void forgetExpenseType(const QString &enveloppe, const QString &desc);
 	void deleteExpense(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc);
-	void      saveEnveloppesToJson();
+	void saveEnveloppesToJson();
 
 	std::filesystem::path getPath() { return basePath; }
 

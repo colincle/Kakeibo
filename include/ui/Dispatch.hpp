@@ -5,6 +5,7 @@
 #include <QList>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <vector>
 
 class QLabel;
 class QPushButton;
@@ -31,26 +32,18 @@ class Dispatch : public QWidget
 		QProgressBar *progressBar;
 		QLabel       *percentLabel;
 		Enveloppe    *env;
+		QPushButton  *lockButton;
 	};
 
-	void    appendRow(Enveloppe &env, EnveloppeManager &allEnvs);
-	void    appendIncomeRow(Enveloppe &env);
-	void    addNameLabel(QHBoxLayout *rowLayout, const Enveloppe &env);
-	void    addAmountLabel(QHBoxLayout *rowLayout, int amount);
-	void    addProgressBar(QHBoxLayout *rowLayout, int amount, int goal);
-	void    addButtons(QHBoxLayout *rowLayout, Enveloppe *env, EnveloppeManager &allEnvs);
-	void    connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushButton *minusBtn, QPushButton *lockBtn, Enveloppe *env, EnveloppeManager &allEnvs);
-	void    fill(Enveloppe *env, EnveloppeManager &allEnvs);
-	void    incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs);
-	void    decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs);
-	void    dispatchIncomeEvenly();
-	void    apply();
-	QString iconButtonStyle();
-	QString fillButtonStyle();
-	QString scrollAreaStyle();
+	struct Operation
+	{
+		int        amountAdded;
+		Enveloppe *env;
+		bool       lockSwitch;
+	};
 
-	void updateRow(const DispatchRow &row);
-	void updateAllRows();
+	std::vector<std::vector<Operation>> undoStack;
+	std::vector<std::vector<Operation>> redoStack;
 
 	QVBoxLayout       *layout        = nullptr;
 	QScrollArea       *scrollArea    = nullptr;
@@ -58,4 +51,25 @@ class Dispatch : public QWidget
 	EnveloppeManager   dispatchManagerCopy;
 	QList<DispatchRow> dispatchRows;
 	DispatchRow        incomeRow;
+
+	void         appendRow(Enveloppe &env, EnveloppeManager &allEnvs);
+	void         appendIncomeRow(Enveloppe &env);
+	void         addNameLabel(QHBoxLayout *rowLayout, const Enveloppe &env);
+	void         addAmountLabel(QHBoxLayout *rowLayout, int amount);
+	void         addProgressBar(QHBoxLayout *rowLayout, int amount, int goal);
+	QPushButton *addButtons(QHBoxLayout *rowLayout, Enveloppe *env, EnveloppeManager &allEnvs);
+	void         connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushButton *minusBtn, QPushButton *lockBtn, Enveloppe *env, EnveloppeManager &allEnvs);
+	void         fill(Enveloppe *env, EnveloppeManager &allEnvs);
+	void         incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs);
+	void         decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs);
+	void         dispatchIncomeEvenly();
+	void         apply();
+	void         undo();
+	void         redo();
+	QString      iconButtonStyle();
+	QString      fillButtonStyle();
+	QString      scrollAreaStyle();
+
+	void updateRow(const DispatchRow &row);
+	void updateAllRows();
 };
