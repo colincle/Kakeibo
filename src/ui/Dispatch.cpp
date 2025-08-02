@@ -132,6 +132,7 @@ void Dispatch::apply()
 	auto &copyIncome     = dispatchManagerCopy.getIncomeEnveloppe();
 	originalIncome.setAmount(copyIncome.getAmount());
 
+	g_enveloppeManager.saveEnveloppesToJson();
 	emit updateNeeded();
 }
 
