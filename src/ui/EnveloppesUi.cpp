@@ -1,6 +1,7 @@
 #include "EnveloppesUi.hpp"
 #include "Assets.hpp"
 #include "Globals.hpp"
+#include "KakeiboScrollArea.hpp"
 
 #include <QCheckBox>
 #include <QDate>
@@ -17,8 +18,6 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QResizeEvent>
-#include <QScrollArea>
-#include <QScrollBar>
 #include <QString>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -82,7 +81,7 @@ void EnveloppesUi::showEnveloppes()
 	if ( !scrollArea || !gridLayout )
 		return;
 
-	int savedScroll = scrollArea->verticalScrollBar()->value();
+	scrollArea->saveScroll();
 	clearGrid();
 
 	showTopInfo();
@@ -91,7 +90,7 @@ void EnveloppesUi::showEnveloppes()
 
 	populateGrid(columnCount);
 
-	restoreScroll(savedScroll);
+	scrollArea->restoreScroll();
 }
 
 void EnveloppesUi::clearGrid()
@@ -189,12 +188,6 @@ void EnveloppesUi::populateGrid(int columnCount)
 			gridLayout->addWidget(dummy, row, col++);
 		}
 	}
-}
-
-void EnveloppesUi::restoreScroll(int savedScroll)
-{
-	QMetaObject::invokeMethod(this, [this, savedScroll]()
-	                          { scrollArea->verticalScrollBar()->setValue(savedScroll); }, Qt::QueuedConnection);
 }
 
 QWidget *EnveloppesUi::createCard(const Enveloppe &env)
@@ -435,34 +428,10 @@ QString EnveloppesUi::getProgressBarColor(int percent, const Enveloppe &env)
 		return "background-color: #FA5E57;";
 }
 
-QScrollArea *EnveloppesUi::createScrollArea(QWidget *content)
+KakeiboScrollArea *EnveloppesUi::createScrollArea(QWidget *content)
 {
-	scrollArea = new QScrollArea(this);
-	scrollArea->setWidgetResizable(true);
-	scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	scrollArea->setFrameShape(QFrame::NoFrame);
+	scrollArea = new KakeiboScrollArea(this);
 	scrollArea->setWidget(content);
-	scrollArea->setStyleSheet(R"(
-		QScrollBar:vertical {
-			background: transparent;
-			width: 8px;
-			margin: 3px 0;
-			border-radius: 4px;
-		}
-		QScrollBar::handle:vertical {
-			background: #1B272A;
-			min-height: 20px;
-			border-radius: 4px;
-		}
-		QScrollBar::add-line:vertical,
-		QScrollBar::sub-line:vertical {
-			height: 0;
-		}
-		QScrollBar::add-page:vertical,
-		QScrollBar::sub-page:vertical {
-			background: none;
-		}
-	)");
 	return scrollArea;
 }
 

@@ -6,11 +6,11 @@
 #include <tuple>
 
 class Enveloppe;
+class KakeiboScrollArea;
 
 class QHBoxLayout;
 class QVBoxLayout;
 class QComboBox;
-class QScrollArea;
 class QTableWidget;
 
 class Stats : public QWidget
@@ -25,7 +25,6 @@ class Stats : public QWidget
 	QVBoxLayout *mainLayout;
 	QHBoxLayout *topBar;
 	QWidget     *topBarContainer = nullptr;
-	QScrollArea *scrollArea      = nullptr;
 	QWidget     *tableContainer  = nullptr;
 	QComboBox   *startCombo;
 	QComboBox   *endCombo;
@@ -38,10 +37,8 @@ class Stats : public QWidget
 	void updateGlobalDateRange();
 	void clearStatsPage();
 
-	void                      setUpTable(QTableWidget *table);
 	void                      populateTable(QTableWidget *table);
 	std::tuple<int, int, int> calculateExpenseStats(const Enveloppe &env);
-	QString                   setTableStyleSheet();
 
 	QHBoxLayout *createDateDropdowns();
 	void         setupDateWidgets();

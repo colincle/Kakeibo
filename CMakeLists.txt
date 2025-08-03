@@ -30,6 +30,7 @@ target_include_directories(Kakeibo PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/include/core
 	${CMAKE_CURRENT_SOURCE_DIR}/include/ui
+	${CMAKE_CURRENT_SOURCE_DIR}/include/uiElements
 	${CMAKE_CURRENT_SOURCE_DIR}/external/json
 )
 

@@ -2,17 +2,16 @@
 #include "Assets.hpp"
 #include "EnveloppeManager.hpp"
 #include "Globals.hpp"
+#include "KakeiboScrollArea.hpp"
+#include "KakeiboTable.hpp"
 
 #include <QAbstractItemView>
 #include <QComboBox>
-#include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMenu>
 #include <QMetaType>
-#include <QScrollArea>
-#include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
@@ -30,12 +29,6 @@ History::History(QWidget *parent) : QWidget(parent)
 	setLayout(mainLayout);
 
 	selected = "Tous すべて";
-
-	scrollArea = new QScrollArea(this);
-	scrollArea->setWidgetResizable(true);
-	scrollArea->setFrameShape(QFrame::NoFrame);
-	mainLayout->addWidget(scrollArea);
-
 	showHistory();
 }
 
@@ -54,13 +47,12 @@ void History::showHistory()
 	tableContainer           = new QWidget;
 	QVBoxLayout *tableLayout = new QVBoxLayout(tableContainer);
 
-	QTableWidget *table = new QTableWidget(tableContainer);
+	KakeiboTable *table = new KakeiboTable(tableContainer);
 	setUpTable(table);
 	populateTable(table);
 	table->resizeColumnsToContents();
 	tableLayout->addWidget(table);
-
-	scrollArea->setWidget(tableContainer);
+	mainLayout->addWidget(tableContainer);
 }
 
 void History::clearTopBarContainer()
@@ -74,7 +66,6 @@ void History::clearTopBarContainer()
 
 	if ( tableContainer )
 	{
-		scrollArea->takeWidget();
 		delete tableContainer;
 		tableContainer = nullptr;
 	}
@@ -88,35 +79,14 @@ void History::clearHistoryPage()
 		delete topBarContainer;
 		topBarContainer = nullptr;
 	}
-
-	if ( scrollArea )
-	{
-		mainLayout->removeWidget(scrollArea);
-		delete scrollArea;
-		scrollArea = nullptr;
-	}
 }
 
-void History::setUpTable(QTableWidget *table)
+void History::setUpTable(KakeiboTable *table)
 {
 	table->setColumnCount(4);
 	table->setHorizontalHeaderLabels({"Date 日付", "Montant 金額", "Enveloppe 封筒", "Description 説明"});
-	table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-	table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-	table->horizontalHeader()->setStretchLastSection(true);
-	table->setTextElideMode(Qt::ElideNone);
-	table->setWordWrap(false);
-	table->setRowCount(0);
-	table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	table->setSelectionBehavior(QAbstractItemView::SelectRows);
-	table->setSelectionMode(QAbstractItemView::SingleSelection);
-	table->verticalHeader()->setVisible(false);
-	table->horizontalHeader()->setHighlightSections(false);
-	table->setShowGrid(true);
-	table->setGridStyle(Qt::SolidLine);
-	table->setStyleSheet(setTableStyleSheet());
 	table->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(table, &QTableWidget::customContextMenuRequested, this, [this, table](const QPoint &pos)
+	connect(table, &KakeiboTable::customContextMenuRequested, this, [this, table](const QPoint &pos)
 	        {
 		int row = table->rowAt(pos.y());
 
@@ -178,49 +148,7 @@ void History::handleRightClick(const QString &date, const QString &amount, const
 	}
 }
 
-QString History::setTableStyleSheet()
-{
-	return R"(
-	       QTableWidget {
-	       background-color: #1B272A;
-	       color: #E1E1E2;
-	       selection-background-color: #2F3D41;
-	       border-left: 1px solid #444;
-	       border-top: 1px solid #444;
-	       font-family: "Helvetica Neue";
-	       gridline-color: grey;
-	       margin-top: 8px;
-       }
-	       QHeaderView::section {
-	       background-color: #242F32;
-	       color: #E1E1E2;
-	       padding: 4px;
-	       border: none;
-       }
-	       QScrollBar:vertical {
-	       background: transparent;
-	       width: 8px;
-	       margin: 3px 0;
-	       border-radius: 4px;
-	       padding-top: 28px;
-       }
-	       QScrollBar::handle:vertical {
-	       background: #1B272A;
-	       min-height: 20px;
-	       border-radius: 4px;
-       }
-	       QScrollBar::add-line:vertical,
-	       QScrollBar::sub-line:vertical {
-	       height: 0;
-       }
-	       QScrollBar::add-page:vertical,
-	       QScrollBar::sub-page:vertical {
-	       background: none;
-       }
-	       )";
-}
-
-void History::populateTable(QTableWidget *table)
+void History::populateTable(KakeiboTable *table)
 {
 	if ( !table )
 		return;
@@ -255,7 +183,7 @@ std::vector<Expense> History::collectFilteredExpenses()
 	return result;
 }
 
-void History::fillTableWithExpenses(QTableWidget *table, const std::vector<Expense> &expenses)
+void History::fillTableWithExpenses(KakeiboTable *table, const std::vector<Expense> &expenses)
 {
 	QLocale jp(QLocale::Japanese, QLocale::Japan);
 

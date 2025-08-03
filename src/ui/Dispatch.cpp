@@ -1,22 +1,23 @@
 #include "Dispatch.hpp"
 #include "Assets.hpp"
+#include "AutoRepeatButton.hpp"
 #include "Globals.hpp"
+#include "IconButton.hpp"
+#include "KakeiboScrollArea.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QVBoxLayout>
+#include <QLocale>
 #include <QScrollArea>
-#include <QScrollBar>
+#include <QSizePolicy>
 
 Dispatch::Dispatch(QWidget *parent)
     : QWidget(parent)
 {
-	scrollArea = new QScrollArea(this);
-	scrollArea->setWidgetResizable(true);
-	scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-	scrollArea->setStyleSheet(scrollAreaStyle());
-	scrollArea->setFrameShape(QFrame::NoFrame);
+	scrollArea = new KakeiboScrollArea(this);
 
 	scrollContent = new QWidget;
 	scrollContent->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -41,7 +42,7 @@ void Dispatch::showDispatch()
 	if ( !scrollArea || !layout )
 		return;
 
-	int savedScroll = scrollArea->verticalScrollBar()->value();
+	scrollArea->saveScroll();
 
 	for ( auto &row : dispatchRows )
 	{
@@ -68,7 +69,7 @@ void Dispatch::showDispatch()
 	}
 
 	updateAllRows();
-	scrollArea->verticalScrollBar()->setValue(savedScroll);
+	scrollArea->restoreScroll();
 }
 
 void Dispatch::appendIncomeRow(Enveloppe &env)
@@ -87,21 +88,18 @@ void Dispatch::appendIncomeRow(Enveloppe &env)
 	auto *amountLabel = new QLabel;
 	rowLayout->addWidget(amountLabel);
 
+	addIncomeRowButtons(rowLayout);
+
 	layout->addWidget(rowWidget);
 
-	auto *undoBtn = new QPushButton;
-	undoBtn->setStyleSheet(iconButtonStyle());
-	undoBtn->setIcon(QIcon(UNDO_ICON));
-	undoBtn->setAutoRepeat(true);
-	undoBtn->setAutoRepeatDelay(300);
-	undoBtn->setAutoRepeatInterval(60);
+	incomeRow = {rowWidget, amountLabel, nullptr, nullptr, &env, nullptr};
+	updateRow(incomeRow);
+}
 
-	auto *redoBtn = new QPushButton;
-	redoBtn->setStyleSheet(iconButtonStyle());
-	redoBtn->setIcon(QIcon(REDO_ICON));
-	redoBtn->setAutoRepeat(true);
-	redoBtn->setAutoRepeatDelay(300);
-	redoBtn->setAutoRepeatInterval(60);
+void Dispatch::addIncomeRowButtons(QHBoxLayout *rowLayout)
+{
+	auto *undoBtn = new AutoRepeatButton(QIcon(UNDO_ICON));
+	auto *redoBtn = new AutoRepeatButton(QIcon(REDO_ICON));
 
 	auto *applyBtn = new QPushButton("Répartir 分配");
 	applyBtn->setStyleSheet(fillButtonStyle());
@@ -121,154 +119,15 @@ void Dispatch::appendIncomeRow(Enveloppe &env)
 	buttonsLayout->addWidget(dispatchBtn);
 	rowLayout->addLayout(buttonsLayout);
 
-	connect(undoBtn, &QPushButton::clicked, this, [this]()
-	        { undo(); });
-
-	connect(redoBtn, &QPushButton::clicked, this, [this]()
-	        { redo(); });
-
-	connect(applyBtn, &QPushButton::clicked, this, [this]()
-	        { dispatchIncomeEvenly(); });
-
-	connect(dispatchBtn, &QPushButton::clicked, this, [this]()
-	        { apply(); });
-
-	incomeRow = {rowWidget, amountLabel, nullptr, nullptr, &env, nullptr};
-
-	updateRow(incomeRow);
+	connectIncomeRowButtons(undoBtn, redoBtn, applyBtn, dispatchBtn);
 }
 
-void Dispatch::apply()
+void Dispatch::connectIncomeRowButtons(QPushButton *undoBtn, QPushButton *redoBtn, QPushButton *applyBtn, QPushButton *dispatchBtn)
 {
-	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
-	{
-		env.setLocked(false);
-
-		env.setAmount(env.getAmount() + env.getDispatchAmount());
-		env.setDispatchAmount(0);
-	}
-
-	auto &originalEnvs = g_enveloppeManager.getEnveloppes();
-	originalEnvs       = dispatchManagerCopy.getEnveloppes();
-
-	auto &originalIncome = g_enveloppeManager.getIncomeEnveloppe();
-	auto &copyIncome     = dispatchManagerCopy.getIncomeEnveloppe();
-	originalIncome.setAmount(copyIncome.getAmount());
-
-	g_enveloppeManager.saveEnveloppesToJson();
-	emit updateNeeded();
-}
-
-void Dispatch::dispatchIncomeEvenly()
-{
-	auto &income       = dispatchManagerCopy.getIncomeEnveloppe();
-	int   incomeAmount = income.getAmount();
-
-	QList<Enveloppe *> targets;
-	int                totalNeeded = 0;
-
-	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
-	{
-		if ( !env.isLocked() )
-		{
-			int current = env.getDispatchAmount();
-			int goal    = env.getGoal();
-
-			if ( current < goal )
-			{
-				targets.append(&env);
-				totalNeeded += (goal - current);
-			}
-		}
-	}
-
-	if ( totalNeeded == 0 || incomeAmount == 0 )
-		return;
-
-	std::vector<Operation> ops;
-
-	if ( incomeAmount >= totalNeeded )
-	{
-		for ( auto *env : targets )
-		{
-			int toAdd = env->getGoal() - env->getDispatchAmount();
-			env->setDispatchAmount(env->getDispatchAmount() + toAdd);
-			redoStack.clear();
-			ops.push_back({toAdd, env, false});
-		}
-
-		income.setAmount(incomeAmount - totalNeeded);
-		ops.push_back({-totalNeeded, &income, false});
-	}
-	else
-	{
-		int distributed = 0;
-		int ratio       = (incomeAmount * 100) / totalNeeded;
-
-		for ( int i = 0; i < targets.size(); ++i )
-		{
-			auto *env   = targets[i];
-			int   need  = env->getGoal() - env->getDispatchAmount();
-			int   toAdd = (need * ratio) / 100;
-
-			if ( i == targets.size() - 1 )
-				toAdd = incomeAmount - distributed;
-
-			env->setDispatchAmount(env->getDispatchAmount() + toAdd);
-			distributed += toAdd;
-			ops.push_back({toAdd, env, false});
-		}
-
-		income.setAmount(incomeAmount - distributed);
-		ops.push_back({-distributed, &income, false});
-	}
-
-	redoStack.clear();
-	undoStack.push_back(std::move(ops));
-	updateAllRows();
-}
-
-void Dispatch::updateRow(const DispatchRow &row)
-{
-	int amount = (row.progressBar || row.percentLabel)
-	                 ? row.env->getDispatchAmount()
-	                 : row.env->getAmount();
-	int goal   = row.env->getGoal();
-
-	QLocale jp(QLocale::Japanese, QLocale::Japan);
-	QString yen = jp.toString(amount);
-
-	float   rate = getEurJpyRateCached();
-	QString eur  = (rate > 0)
-	                   ? QLocale(QLocale::French, QLocale::France).toString(amount / rate, 'f', 2) + "€"
-	                   : "-€";
-
-	if ( row.amountLabel )
-		row.amountLabel->setText(QString("¥%1\n%2").arg(yen, eur));
-
-	if ( row.progressBar )
-	{
-		int percent = (goal > 0) ? (amount * 100 / goal) : 0;
-		row.progressBar->setMaximum(100);
-		row.progressBar->setValue(std::min(percent, 100));
-	}
-
-	if ( row.percentLabel )
-	{
-		int percent = (goal > 0) ? (amount * 100 / goal) : 0;
-		row.percentLabel->setText(QString("%1%").arg(percent));
-	}
-
-	if ( row.lockButton )
-		row.lockButton->setIcon(QIcon(row.env->isLocked() ? LOCKED_ICON : UNLOCKED_ICON));
-}
-
-void Dispatch::updateAllRows()
-{
-	updateRow(incomeRow);
-
-	for ( const auto &row : dispatchRows )
-		updateRow(row);
+	connect(undoBtn, &QPushButton::clicked, this, [this]() { undo(); });
+	connect(redoBtn, &QPushButton::clicked, this, [this]() { redo(); });
+	connect(applyBtn, &QPushButton::clicked, this, [this]() { dispatchIncomeEvenly(); });
+	connect(dispatchBtn, &QPushButton::clicked, this, [this]() { apply(); });
 }
 
 void Dispatch::appendRow(Enveloppe &env, EnveloppeManager &allEnvs)
@@ -356,25 +215,13 @@ QPushButton *Dispatch::addButtons(QHBoxLayout *rowLayout, Enveloppe *env, Envelo
 	btn->setStyleSheet(fillButtonStyle());
 	rowLayout->addWidget(btn);
 
-	auto *plusBtn = new QPushButton;
-	plusBtn->setIcon(QIcon(INCREMENT_ICON));
-	plusBtn->setStyleSheet(iconButtonStyle());
-	plusBtn->setAutoRepeat(true);
-	plusBtn->setAutoRepeatDelay(300);
-	plusBtn->setAutoRepeatInterval(60);
+	auto *plusBtn = new AutoRepeatButton(QIcon(INCREMENT_ICON));
 	rowLayout->addWidget(plusBtn);
 
-	auto *minusBtn = new QPushButton;
-	minusBtn->setIcon(QIcon(DECREMENT_ICON));
-	minusBtn->setStyleSheet(iconButtonStyle());
-	minusBtn->setAutoRepeat(true);
-	minusBtn->setAutoRepeatDelay(300);
-	minusBtn->setAutoRepeatInterval(60);
+	auto *minusBtn = new AutoRepeatButton(QIcon(DECREMENT_ICON));
 	rowLayout->addWidget(minusBtn);
 
-	auto *lockBtn = new QPushButton;
-	lockBtn->setIcon(QIcon(env->isLocked() ? LOCKED_ICON : UNLOCKED_ICON));
-	lockBtn->setStyleSheet(iconButtonStyle());
+	auto *lockBtn = new IconButton(QIcon(env->isLocked() ? LOCKED_ICON : UNLOCKED_ICON));
 	rowLayout->addWidget(lockBtn);
 
 	connectButtons(btn, plusBtn, minusBtn, lockBtn, env, allEnvs);
@@ -398,6 +245,72 @@ void Dispatch::connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushB
 		lockBtn->setIcon(QIcon(env->isLocked() ? LOCKED_ICON : UNLOCKED_ICON));
 		undoStack.push_back({{0, env, true}});
 		redoStack.clear(); });
+}
+
+void Dispatch::updateRow(const DispatchRow &row)
+{
+	int amount = (row.progressBar || row.percentLabel)
+	                 ? row.env->getDispatchAmount()
+	                 : row.env->getAmount();
+	int goal   = row.env->getGoal();
+
+	QLocale jp(QLocale::Japanese, QLocale::Japan);
+	QString yen = jp.toString(amount);
+
+	float   rate = getEurJpyRateCached();
+	QString eur  = (rate > 0)
+	                   ? QLocale(QLocale::French, QLocale::France).toString(amount / rate, 'f', 2) + "€"
+	                   : "-€";
+
+	if ( row.amountLabel )
+		row.amountLabel->setText(QString("¥%1\n%2").arg(yen, eur));
+
+	if ( row.progressBar )
+	{
+		int percent = (goal > 0) ? (amount * 100 / goal) : 0;
+		row.progressBar->setMaximum(100);
+		row.progressBar->setValue(std::min(percent, 100));
+	}
+
+	if ( row.percentLabel )
+	{
+		int percent = (goal > 0) ? (amount * 100 / goal) : 0;
+		row.percentLabel->setText(QString("%1%").arg(percent));
+	}
+
+	if ( row.lockButton )
+		row.lockButton->setIcon(QIcon(row.env->isLocked() ? LOCKED_ICON : UNLOCKED_ICON));
+}
+
+void Dispatch::updateAllRows()
+{
+	updateRow(incomeRow);
+
+	for ( const auto &row : dispatchRows )
+		updateRow(row);
+}
+
+void Dispatch::fill(Enveloppe *env, EnveloppeManager &allEnvs)
+{
+	auto &income       = allEnvs.getIncomeEnveloppe();
+	int   incomeAmount = income.getAmount();
+	int   current      = env->getDispatchAmount();
+	int   goal         = env->getGoal();
+
+	if ( current >= goal || incomeAmount <= 0 )
+		return;
+
+	int needed      = goal - current;
+	int amountToAdd = std::min(needed, incomeAmount);
+
+	env->setDispatchAmount(current + amountToAdd);
+	income.setAmount(incomeAmount - amountToAdd);
+
+	undoStack.push_back(
+	    {{amountToAdd, env, false},
+	     {-amountToAdd, &income, false}});
+	redoStack.clear();
+	updateAllRows();
 }
 
 void Dispatch::incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
@@ -474,27 +387,93 @@ void Dispatch::decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
 	updateAllRows();
 }
 
-void Dispatch::fill(Enveloppe *env, EnveloppeManager &allEnvs)
+void Dispatch::dispatchIncomeEvenly()
 {
-	auto &income       = allEnvs.getIncomeEnveloppe();
+	auto &income       = dispatchManagerCopy.getIncomeEnveloppe();
 	int   incomeAmount = income.getAmount();
-	int   current      = env->getDispatchAmount();
-	int   goal         = env->getGoal();
 
-	if ( current >= goal || incomeAmount <= 0 )
+	QList<Enveloppe *> targets;
+	int                totalNeeded = 0;
+
+	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
+	{
+		if ( !env.isLocked() )
+		{
+			int current = env.getDispatchAmount();
+			int goal    = env.getGoal();
+
+			if ( current < goal )
+			{
+				targets.append(&env);
+				totalNeeded += (goal - current);
+			}
+		}
+	}
+
+	if ( totalNeeded == 0 || incomeAmount == 0 )
 		return;
 
-	int needed      = goal - current;
-	int amountToAdd = std::min(needed, incomeAmount);
+	std::vector<Operation> ops;
 
-	env->setDispatchAmount(current + amountToAdd);
-	income.setAmount(incomeAmount - amountToAdd);
+	if ( incomeAmount >= totalNeeded )
+	{
+		for ( auto *env : targets )
+		{
+			int toAdd = env->getGoal() - env->getDispatchAmount();
+			env->setDispatchAmount(env->getDispatchAmount() + toAdd);
+			ops.push_back({toAdd, env, false});
+		}
 
-	undoStack.push_back(
-	    {{amountToAdd, env, false},
-	     {-amountToAdd, &income, false}});
+		income.setAmount(incomeAmount - totalNeeded);
+		ops.push_back({-totalNeeded, &income, false});
+	}
+	else
+	{
+		int distributed = 0;
+		int ratio       = (incomeAmount * 100) / totalNeeded;
+
+		for ( int i = 0; i < targets.size(); ++i )
+		{
+			auto *env   = targets[i];
+			int   need  = env->getGoal() - env->getDispatchAmount();
+			int   toAdd = (need * ratio) / 100;
+
+			if ( i == targets.size() - 1 )
+				toAdd = incomeAmount - distributed;
+
+			env->setDispatchAmount(env->getDispatchAmount() + toAdd);
+			distributed += toAdd;
+			ops.push_back({toAdd, env, false});
+		}
+
+		income.setAmount(incomeAmount - distributed);
+		ops.push_back({-distributed, &income, false});
+	}
+
 	redoStack.clear();
+	undoStack.push_back(std::move(ops));
 	updateAllRows();
+}
+
+void Dispatch::apply()
+{
+	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
+	{
+		env.setLocked(false);
+
+		env.setAmount(env.getAmount() + env.getDispatchAmount());
+		env.setDispatchAmount(0);
+	}
+
+	auto &originalEnvs = g_enveloppeManager.getEnveloppes();
+	originalEnvs       = dispatchManagerCopy.getEnveloppes();
+
+	auto &originalIncome = g_enveloppeManager.getIncomeEnveloppe();
+	auto &copyIncome     = dispatchManagerCopy.getIncomeEnveloppe();
+	originalIncome.setAmount(copyIncome.getAmount());
+
+	g_enveloppeManager.saveEnveloppesToJson();
+	emit updateNeeded();
 }
 
 void Dispatch::undo()
@@ -544,21 +523,6 @@ void Dispatch::redo()
 	updateAllRows();
 }
 
-QString Dispatch::iconButtonStyle()
-{
-	return R"(
-	       QPushButton {
-	       background-color: transparent;
-	       border: none;
-	       padding: 4px;
-       }
-	       QPushButton:pressed {
-	       background-color: #1B272A;
-	       border-radius: 6px;
-       }
-	       )";
-}
-
 QString Dispatch::fillButtonStyle()
 {
 	return R"(
@@ -576,31 +540,6 @@ QString Dispatch::fillButtonStyle()
        }
 	       QPushButton:pressed {
 	       background-color: #1B272A;
-       }
-	       )";
-}
-
-QString Dispatch::scrollAreaStyle()
-{
-	return R"(
-	       QScrollBar:vertical {
-	       background: transparent;
-	       width: 8px;
-	       margin: 3px 0;
-	       border-radius: 4px;
-       }
-	       QScrollBar::handle:vertical {
-	       background: #1B272A;
-	       min-height: 20px;
-	       border-radius: 4px;
-       }
-	       QScrollBar::add-line:vertical,
-	       QScrollBar::sub-line:vertical {
-	       height: 0;
-       }
-	       QScrollBar::add-page:vertical,
-	       QScrollBar::sub-page:vertical {
-	       background: none;
        }
 	       )";
 }

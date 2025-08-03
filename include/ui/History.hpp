@@ -6,11 +6,12 @@
 #include <string>
 #include <vector>
 
+class KakeiboScrollArea;
+
 class QHBoxLayout;
 class QVBoxLayout;
 class QComboBox;
-class QScrollArea;
-class QTableWidget;
+class KakeiboTable;
 class QLabel;
 
 struct Expense;
@@ -40,18 +41,16 @@ class History : public QWidget
 	QVBoxLayout *mainLayout;
 	QHBoxLayout *topBar;
 	QWidget     *topBarContainer = nullptr;
-	QScrollArea *scrollArea      = nullptr;
 	QWidget     *tableContainer  = nullptr;
 
 	void                 updateGlobalDateRange();
 	void                 clearTopBarContainer();
 	void                 clearHistoryPage();
-	void                 populateTable(QTableWidget *table);
+	void                 populateTable(KakeiboTable *table);
 	std::vector<Expense> collectFilteredExpenses();
-	void                 fillTableWithExpenses(QTableWidget *table, const std::vector<Expense> &expenses);
+	void                 fillTableWithExpenses(KakeiboTable *table, const std::vector<Expense> &expenses);
 
-	void    setUpTable(QTableWidget *table);
-	QString setTableStyleSheet();
+	void setUpTable(KakeiboTable *table);
 
 	QHBoxLayout *createEnveloppeDropdown();
 	QHBoxLayout *createDateDropdowns();

@@ -6,6 +6,8 @@
 #include <QString>
 #include <QWidget>
 
+class KakeiboScrollArea;
+
 class QCheckBox;
 class QDialog;
 class QFormLayout;
@@ -13,7 +15,6 @@ class QGridLayout;
 class QLabel;
 class QLineEdit;
 class QPushButton;
-class QScrollArea;
 class QTimer;
 class QVBoxLayout;
 class QHBoxLayout;
@@ -46,18 +47,17 @@ class EnveloppesUi : public QWidget
 		QCheckBox *savingsCheck   = nullptr;
 	};
 
-	QGridLayout     *gridLayout          = nullptr;
-	QTimer          *resizeDebounceTimer = nullptr;
-	QScrollArea     *scrollArea          = nullptr;
-	QWidget         *scrollContent       = nullptr;
-	QList<QWidget *> cloudCardWidgets;
-	QWidget         *topInfoWidget = nullptr;
-	QHBoxLayout     *topInfoLayout = nullptr;
+	QGridLayout       *gridLayout          = nullptr;
+	QTimer            *resizeDebounceTimer = nullptr;
+	KakeiboScrollArea *scrollArea          = nullptr;
+	QWidget           *scrollContent       = nullptr;
+	QList<QWidget *>   cloudCardWidgets;
+	QWidget           *topInfoWidget = nullptr;
+	QHBoxLayout       *topInfoLayout = nullptr;
 
 	void clearGrid();
 	int  computeColumnCount() const;
 	void populateGrid(int columnCount);
-	void restoreScroll(int savedScroll);
 
 	void                 showTopInfo();
 	QWidget             *createCard(const Enveloppe &env);
@@ -79,7 +79,7 @@ class EnveloppesUi : public QWidget
 	void setupEnveloppeDialog(QDialog &dialog);
 	void preFillFieldsFromName(const std::string &name, EnveloppeFormFields &fields);
 
-	QScrollArea *createScrollArea(QWidget *content);
-	void         clearEnveloppes();
-	QString      dialogStyleSheet();
+	KakeiboScrollArea *createScrollArea(QWidget *content);
+	void               clearEnveloppes();
+	QString            dialogStyleSheet();
 };

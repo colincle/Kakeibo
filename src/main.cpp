@@ -49,9 +49,10 @@ int main(int argc, char *argv[])
 	return app.exec();
 }
 /*
-TO DO 
+TO DO
 Total check
 credit
 weird left border on tab click
-refactor WIP
+lock red color
+subclass all redondant widgets (look for styleSheet)
 */

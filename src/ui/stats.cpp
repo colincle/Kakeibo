@@ -1,6 +1,8 @@
 #include "Stats.hpp"
 #include "Assets.hpp"
 #include "Globals.hpp"
+#include "KakeiboScrollArea.hpp"
+#include "KakeiboTable.hpp"
 
 #include <QAbstractItemView>
 #include <QComboBox>
@@ -10,7 +12,6 @@
 #include <QLabel>
 #include <QLocale>
 #include <QMetaType>
-#include <QScrollArea>
 #include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -26,12 +27,6 @@ Stats::Stats(QWidget *parent) : QWidget(parent)
 	mainLayout = new QVBoxLayout(this);
 	mainLayout->setAlignment(Qt::AlignTop);
 	setLayout(mainLayout);
-
-	scrollArea = new QScrollArea(this);
-	scrollArea->setWidgetResizable(true);
-	scrollArea->setFrameShape(QFrame::NoFrame);
-	mainLayout->addWidget(scrollArea);
-
 	showStats();
 }
 
@@ -48,7 +43,6 @@ void Stats::showStats()
 
 	if ( tableContainer )
 	{
-		scrollArea->takeWidget();
 		delete tableContainer;
 		tableContainer = nullptr;
 	}
@@ -62,27 +56,13 @@ void Stats::showStats()
 	tableContainer           = new QWidget;
 	QVBoxLayout *tableLayout = new QVBoxLayout(tableContainer);
 
-	QTableWidget *table = new QTableWidget(tableContainer);
-	setUpTable(table);
-	tableLayout->addWidget(table);
-
-	scrollArea->setWidget(tableContainer);
-}
-
-void Stats::setUpTable(QTableWidget *table)
-{
+	auto *table = new KakeiboTable(tableContainer);
 	table->setColumnCount(3);
 	table->setHorizontalHeaderLabels({"Enveloppe 封筒", "Par mois 月額", "Par année 年額"});
-	table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-	table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-	table->horizontalHeader()->setStretchLastSection(true);
-	table->setTextElideMode(Qt::ElideNone);
-	table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	table->setWordWrap(false);
-	table->verticalHeader()->setVisible(false);
 	populateTable(table);
 	table->resizeColumnsToContents();
-	table->setStyleSheet(setTableStyleSheet());
+	tableLayout->addWidget(table);
+	mainLayout->addWidget(tableContainer);
 }
 
 void Stats::populateTable(QTableWidget *table)
@@ -112,48 +92,6 @@ void Stats::populateTable(QTableWidget *table)
 		else
 			table->setItem(row, 2, new QTableWidgetItem("n/a"));
 	}
-}
-
-QString Stats::setTableStyleSheet()
-{
-	return R"(
-	       QTableWidget {
-	       background-color: #1B272A;
-	       color: #E1E1E2;
-	       selection-background-color: #2F3D41;
-	       border-left: 1px solid #444;
-	       border-top: 1px solid #444;
-	       font-family: "Helvetica Neue";
-	       gridline-color: grey;
-	       margin-top: 8px;
-       }
-	       QHeaderView::section {
-	       background-color: #242F32;
-	       color: #E1E1E2;
-	       padding: 4px;
-	       border: none;
-       }
-	       QScrollBar:vertical {
-	       background: transparent;
-	       width: 8px;
-	       margin: 3px 0;
-	       border-radius: 4px;
-	       padding-top: 28px;
-       }
-	       QScrollBar::handle:vertical {
-	       background: #1B272A;
-	       min-height: 20px;
-	       border-radius: 4px;
-       }
-	       QScrollBar::add-line:vertical,
-	       QScrollBar::sub-line:vertical {
-	       height: 0;
-       }
-	       QScrollBar::add-page:vertical,
-	       QScrollBar::sub-page:vertical {
-	       background: none;
-       }
-	       )";
 }
 
 QHBoxLayout *Stats::createDateDropdowns()
@@ -318,17 +256,9 @@ std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe &env)
 
 void Stats::clearStatsPage()
 {
-	if ( topBarContainer )
-	{
-		mainLayout->removeWidget(topBarContainer);
-		delete topBarContainer;
-		topBarContainer = nullptr;
-	}
-
-	if ( scrollArea )
-	{
-		mainLayout->removeWidget(scrollArea);
-		delete scrollArea;
-		scrollArea = nullptr;
-	}
+	if ( !topBarContainer )
+		return ;
+	mainLayout->removeWidget(topBarContainer);
+	delete topBarContainer;
+	topBarContainer = nullptr;
 }
