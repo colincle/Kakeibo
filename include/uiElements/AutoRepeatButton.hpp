@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QPushButton>
 #include <QIcon>
+#include <QPushButton>
 
 class AutoRepeatButton : public QPushButton
 {
@@ -21,15 +21,15 @@ class AutoRepeatButton : public QPushButton
 	static QString style()
 	{
 		return R"(
-			QPushButton {
-				background-color: transparent;
-				border: none;
-				padding: 4px;
-			}
-			QPushButton:pressed {
-				background-color: #1B272A;
-				border-radius: 6px;
-			}
-		)";
+		       QPushButton {
+		       background-color: transparent;
+		       border: none;
+		       padding: 4px;
+	       }
+		       QPushButton:pressed {
+		       background-color: #1B272A;
+		       border-radius: 6px;
+	       }
+		       )";
 	}
 };

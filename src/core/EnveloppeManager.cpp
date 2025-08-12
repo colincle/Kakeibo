@@ -232,6 +232,9 @@ void EnveloppeManager::addTypeAndExpense(const std::string &name, const Expense 
 
 void EnveloppeManager::addExpense(Expense e, Enveloppe &env)
 {
+	if ( e.isCredit )
+		creditEnveloppe.addExpense(-e.amount);
+
 	e.enveloppe = env.getName();
 	env.addExpense(e.amount);
 	env.addToExpenseVector(e);

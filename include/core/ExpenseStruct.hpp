@@ -12,6 +12,7 @@ struct Expense
 	int                         amount;
 	std::string                 info;
 	std::string                 enveloppe;
+	bool                        isCredit;
 };
 
 inline void to_json(json &j, const Expense &e)
@@ -31,7 +32,8 @@ inline void to_json(json &j, const Expense &e)
 	j = json {{"date", dateStr},
 	          {"amount", e.amount},
 	          {"info", e.info},
-	          {"enveloppe", e.enveloppe}};
+	          {"enveloppe", e.enveloppe},
+	          {"isCredit", e.isCredit}};
 }
 
 inline void from_json(const json &j, Expense &e)
@@ -45,4 +47,5 @@ inline void from_json(const json &j, Expense &e)
 	e.amount    = j.at("amount").get<int>();
 	e.info      = j.at("info").get<std::string>();
 	e.enveloppe = j.at("enveloppe").get<std::string>();
+	e.isCredit  = j.contains("isCredit") ? j.at("isCredit").get<bool>() : false;
 }

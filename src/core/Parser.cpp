@@ -13,7 +13,22 @@ std::vector<Expense> Parser::parseExpenses(std::string data, std::chrono::year y
 {
 	data                           = convertFullWidthToAscii(data);
 	std::vector<std::string> lines = splitIntoLines(data);
-	return fillExpensesStruct(lines, year);
+	lines                          = removeEmptyLines(lines);
+
+	switch ( whichBank(lines[0]) )
+	{
+	case RAKUTEN:
+		return fillExpensesStructRakuten(lines);
+
+	case MITSUBISHI:
+		return fillExpensesStructMitsubishi(lines, year);
+
+	case RAKUTEN_CREDIT:
+		return fillExpensesStructRakutenCredit(lines);
+
+	default:
+		return {};
+	}
 }
 
 std::string Parser::convertFullWidthToAscii(const std::string &input)
@@ -72,7 +87,144 @@ std::vector<std::string> Parser::splitIntoLines(std::string data)
 	return lines;
 }
 
-std::vector<Expense> Parser::fillExpensesStruct(std::vector<std::string> lines, std::chrono::year year)
+std::vector<std::string> Parser::removeEmptyLines(const std::vector<std::string> &lines)
+{
+	std::vector<std::string> result;
+	result.reserve(lines.size());
+
+	for ( const auto &line : lines )
+	{
+		if ( !line.empty() )
+			result.push_back(line);
+	}
+
+	return result;
+}
+
+int Parser::whichBank(std::string line)
+{
+	size_t pos = line.find('\t');
+
+	if ( pos == std::string::npos )
+		return 0;
+
+	line = line.substr(0, pos);
+	return static_cast<int>(std::count(line.begin(), line.end(), '/'));
+}
+
+std::vector<Expense> Parser::fillExpensesStructRakutenCredit(std::vector<std::string> lines)
+{
+	std::vector<Expense> expenses;
+
+	for ( const std::string &line : lines )
+	{
+		std::istringstream stream(line);
+		std::string        dateStr, description, tmp, amountStr;
+
+		std::getline(stream, dateStr, '\t');
+		std::getline(stream, description, '\t');
+		std::getline(stream, tmp, '\t');
+		std::getline(stream, tmp, '\t');
+		std::getline(stream, amountStr, '\t');
+
+		if ( dateStr.empty() || amountStr.empty() )
+			continue;
+
+		auto trim = [](std::string &s)
+		{
+			s.erase(0, s.find_first_not_of(" \t\r\n"));
+			s.erase(s.find_last_not_of(" \t\r\n") + 1);
+		};
+		trim(amountStr);
+
+		amountStr.erase(std::remove_if(amountStr.begin(), amountStr.end(),
+		                               [](unsigned char c)
+		                               { return !std::isdigit(c); }),
+		                amountStr.end());
+
+		Expense e;
+		{
+			int  y, m, d;
+			char sep1, sep2;
+			std::istringstream(dateStr) >> y >> sep1 >> m >> sep2 >> d;
+			e.date = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
+		}
+
+		int amount  = std::stoi(amountStr);
+		e.amount    = -amount;
+		e.info      = description;
+		e.enveloppe = "";
+		e.isCredit  = true;
+
+		expenses.push_back(e);
+	}
+
+	return expenses;
+}
+
+std::vector<Expense> Parser::fillExpensesStructRakuten(std::vector<std::string> lines)
+{
+	std::vector<Expense> expenses;
+
+	auto isDate = [](const std::string &s)
+	{
+		int                y, m, d;
+		char               a, b;
+		std::istringstream ss(s);
+		return (ss >> y >> a >> m >> b >> d) && a == '/' && b == '/';
+	};
+	auto trim = [](std::string &s)
+	{
+		s.erase(0, s.find_first_not_of(" \t\r\n"));
+		s.erase(s.find_last_not_of(" \t\r\n") + 1);
+	};
+
+	size_t i = 0;
+
+	while ( i + 2 < lines.size() )
+	{
+		if ( !isDate(lines[i]) )
+		{
+			++i;
+			continue;
+		}
+
+		std::string dateStr     = lines[i];
+		std::string description = lines[i + 1];
+		std::string amountStr   = lines[i + 2];
+
+		trim(amountStr);
+		amountStr.erase(std::remove_if(amountStr.begin(), amountStr.end(),
+		                               [](unsigned char c)
+		                               { return !(std::isdigit(c) || c == '-'); }),
+		                amountStr.end());
+
+		if ( amountStr.empty() || amountStr == "-" )
+		{
+			i += (i + 3 < lines.size() && !isDate(lines[i + 3])) ? 4 : 3;
+			continue;
+		}
+
+		Expense e;
+		int     y, m, d;
+		char    sep1, sep2;
+		std::istringstream(dateStr) >> y >> sep1 >> m >> sep2 >> d;
+		e.date = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
+
+		e.amount    = std::stoi(amountStr);
+		e.info      = description;
+		e.enveloppe = "";
+		e.isCredit  = (e.amount > 0);
+
+		expenses.push_back(e);
+
+		i += (i + 3 < lines.size() && !isDate(lines[i + 3])) ? 4 : 3;
+	}
+
+	return expenses;
+}
+
+std::vector<Expense> Parser::fillExpensesStructMitsubishi(std::vector<std::string> lines, std::chrono::year year)
 {
 	std::vector<Expense> expenses;
 
@@ -110,7 +262,8 @@ std::vector<Expense> Parser::fillExpensesStruct(std::vector<std::string> lines, 
 		else
 			continue;
 
-		e.info = removeIsolatedNumber(info);
+		e.info     = removeIsolatedNumber(info);
+		e.isCredit = false;
 		expenses.push_back(e);
 	}
 

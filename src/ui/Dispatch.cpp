@@ -7,12 +7,12 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLocale>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QVBoxLayout>
-#include <QLocale>
 #include <QScrollArea>
 #include <QSizePolicy>
+#include <QVBoxLayout>
 
 Dispatch::Dispatch(QWidget *parent)
     : QWidget(parent)
@@ -124,10 +124,14 @@ void Dispatch::addIncomeRowButtons(QHBoxLayout *rowLayout)
 
 void Dispatch::connectIncomeRowButtons(QPushButton *undoBtn, QPushButton *redoBtn, QPushButton *applyBtn, QPushButton *dispatchBtn)
 {
-	connect(undoBtn, &QPushButton::clicked, this, [this]() { undo(); });
-	connect(redoBtn, &QPushButton::clicked, this, [this]() { redo(); });
-	connect(applyBtn, &QPushButton::clicked, this, [this]() { dispatchIncomeEvenly(); });
-	connect(dispatchBtn, &QPushButton::clicked, this, [this]() { apply(); });
+	connect(undoBtn, &QPushButton::clicked, this, [this]()
+	        { undo(); });
+	connect(redoBtn, &QPushButton::clicked, this, [this]()
+	        { redo(); });
+	connect(applyBtn, &QPushButton::clicked, this, [this]()
+	        { dispatchIncomeEvenly(); });
+	connect(dispatchBtn, &QPushButton::clicked, this, [this]()
+	        { apply(); });
 }
 
 void Dispatch::appendRow(Enveloppe &env, EnveloppeManager &allEnvs)

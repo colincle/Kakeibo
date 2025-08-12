@@ -257,7 +257,8 @@ std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe &env)
 void Stats::clearStatsPage()
 {
 	if ( !topBarContainer )
-		return ;
+		return;
+
 	mainLayout->removeWidget(topBarContainer);
 	delete topBarContainer;
 	topBarContainer = nullptr;

@@ -57,7 +57,7 @@ class Dispatch : public QWidget
 	void appendIncomeRow(Enveloppe &env);
 	void addIncomeRowButtons(QHBoxLayout *rowLayout);
 	void connectIncomeRowButtons(QPushButton *undoBtn, QPushButton *redoBtn, QPushButton *applyBtn, QPushButton *dispatchBtn);
-	
+
 	void         appendRow(Enveloppe &env, EnveloppeManager &allEnvs);
 	void         addNameLabel(QHBoxLayout *rowLayout, const Enveloppe &env);
 	void         addAmountLabel(QHBoxLayout *rowLayout, int amount);
