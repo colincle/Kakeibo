@@ -197,6 +197,16 @@ void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 			break;
 	}
 
+	for ( const std::string &type : g_enveloppeManager.getCreditEnveloppe().getTypes() )
+	{
+		if ( e.info == type )
+		{
+			g_enveloppeManager.addExpense(e, g_enveloppeManager.getCreditEnveloppe());
+			matched = true;
+			break;
+		}
+	}
+
 	if ( !matched )
 	{
 		bool        rememberType = false;
@@ -211,6 +221,8 @@ std::string ImportExpenses::selectEnveloppeDialog(QWidget *parent, const std::ve
 
 	for ( const auto &env : enveloppes )
 		names << QString::fromStdString(env.getName());
+
+	names << QString::fromStdString(g_enveloppeManager.getCreditEnveloppe().getName());
 
 	QString selected;
 	QString label = buildDialogLabel(e);

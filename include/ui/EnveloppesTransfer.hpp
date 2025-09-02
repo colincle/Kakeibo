@@ -61,7 +61,6 @@ class EnveloppesTransfer final
 	static QFormLayout *createFormLayout(QDialog &dialog);
 	static void         styleWidgets(TransferUi &ui);
 	static void         addComboBoxes(QFormLayout *layout, TransferUi &ui);
-	static void         addAmountRow(QDialog &dialog, QFormLayout *layout, TransferUi &ui);
 
 	static std::function<void()> makeFillHandler(TransferUi &ui);
 	static std::function<void()> makeUpdateOk(const TransferUi &ui);

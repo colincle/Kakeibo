@@ -23,8 +23,12 @@ void EnveloppesTransfer::transfer(QWidget *parent)
 	QDialog dialog(parent);
 	setupDialogStyle(dialog);
 
-	const auto &envs = g_enveloppeManager.getEnveloppes();
-	TransferUi  ui   = createUiElements(dialog, envs);
+	// include all enveloppes + special ones
+	std::vector<Enveloppe> envs = g_enveloppeManager.getEnveloppes();
+	envs.push_back(g_enveloppeManager.getCreditEnveloppe());
+	envs.push_back(g_enveloppeManager.getIncomeEnveloppe());
+
+	TransferUi ui = createUiElements(dialog, envs);
 	fillComboBoxes(ui);
 	setupConnections(ui, dialog);
 	buildLayout(dialog, ui);
@@ -99,7 +103,7 @@ TransferUi EnveloppesTransfer::createUiElements(QDialog &dialog, const std::vect
 	    fromBox,
 	    toBox,
 	    new QLineEdit(&dialog),
-	    new QPushButton("Remplir jusqu’à l’objectif \n目標まで追加", &dialog),
+	    nullptr, // no fill button anymore
 	    new QLabel(&dialog),
 	    buttons,
 	    envs,
@@ -157,7 +161,7 @@ void EnveloppesTransfer::buildLayout(QDialog &dialog, TransferUi &ui)
 	QFormLayout *layout = createFormLayout(dialog);
 	styleWidgets(ui);
 	addComboBoxes(layout, ui);
-	addAmountRow(dialog, layout, ui);
+	layout->addRow("Amount:", ui.amountEdit);
 	layout->addRow("", ui.previewLabel);
 	layout->addWidget(ui.buttons);
 }
@@ -173,33 +177,25 @@ QFormLayout *EnveloppesTransfer::createFormLayout(QDialog &dialog)
 
 void EnveloppesTransfer::styleWidgets(TransferUi &ui)
 {
-	QString comboStyle  = R"(
+	QString comboStyle = R"(
 		background-color: #1B272A;
 		color: #E1E1E2;
 		border: 1px solid #2F3D41;
 		border-radius: 4px;
 		padding: 4px;
 	)";
-	QString inputStyle  = R"(
+	QString inputStyle = R"(
 		background-color: #1B272A;
 		color: #E1E1E2;
 		border: 1px solid #2F3D41;
 		border-radius: 4px;
 		padding: 4px;
-	)";
-	QString buttonStyle = R"(
-		background-color: #1B272A;
-		color: #E1E1E2;
-		border: none;
-		padding: 6px 12px;
-		border-radius: 4px;
 	)";
 
 	ui.fromBox->setStyleSheet(comboStyle);
 	ui.toBox->setStyleSheet(comboStyle);
 	ui.amountEdit->setStyleSheet(inputStyle);
 	ui.previewLabel->setStyleSheet("color: #E1E1E2;");
-	ui.fillButton->setStyleSheet(buttonStyle);
 }
 
 void EnveloppesTransfer::addComboBoxes(QFormLayout *layout, TransferUi &ui)
@@ -208,62 +204,24 @@ void EnveloppesTransfer::addComboBoxes(QFormLayout *layout, TransferUi &ui)
 	layout->addRow("À\n送金先:", ui.toBox);
 }
 
-void EnveloppesTransfer::addAmountRow(QDialog &dialog, QFormLayout *layout, TransferUi &ui)
-{
-	QGridLayout *grid = new QGridLayout();
-	grid->setContentsMargins(0, 0, 0, 0);
-	grid->setHorizontalSpacing(10);
-	grid->addWidget(ui.amountEdit, 0, 0);
-	grid->addWidget(ui.fillButton, 0, 1);
-
-	QWidget *rowWidget = new QWidget(&dialog);
-	rowWidget->setLayout(grid);
-	layout->addRow("Amount:", rowWidget);
-}
-
 void EnveloppesTransfer::setupConnections(TransferUi &ui, QDialog &dialog)
 {
 	auto updateOk      = makeUpdateOk(ui);
-	auto updateFill    = makeUpdateFill(ui);
 	auto updatePreview = makeUpdatePreview(ui);
 
 	QObject::connect(ui.fromBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updateOk);
 	QObject::connect(ui.toBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updateOk);
 	QObject::connect(ui.amountEdit, &QLineEdit::textChanged, updateOk);
 
-	QObject::connect(ui.fromBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updateFill);
-	QObject::connect(ui.toBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updateFill);
-	updateFill();
-
 	QObject::connect(ui.fromBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updatePreview);
 	QObject::connect(ui.toBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updatePreview);
 	QObject::connect(ui.amountEdit, &QLineEdit::textChanged, updatePreview);
 	updatePreview();
 
-	QObject::connect(ui.fillButton, &QPushButton::clicked, makeFillHandler(ui));
 	QObject::connect(ui.buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
 	QObject::connect(ui.buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
 	ui.okButton->setEnabled(false);
-}
-
-std::function<void()> EnveloppesTransfer::makeFillHandler(TransferUi &ui)
-{
-	return [=, &ui]()
-	{
-		int fromRaw = ui.fromBox->currentIndex();
-		int toRaw   = ui.toBox->currentIndex();
-
-		if ( fromRaw < 0 || toRaw < 0 )
-			return;
-
-		size_t fromIdx = static_cast<size_t>(fromRaw);
-		size_t toIdx   = static_cast<size_t>(toRaw);
-		int    val     = fillToGoal(ui.enveloppes[fromIdx], ui.enveloppes[toIdx]);
-
-		if ( val > 0 )
-			ui.amountEdit->setText(QString::number(val));
-	};
 }
 
 auto EnveloppesTransfer::makeUpdateOk(const TransferUi &ui) -> std::function<void()>
@@ -280,23 +238,6 @@ auto EnveloppesTransfer::makeUpdateOk(const TransferUi &ui) -> std::function<voi
 		int    amount  = ui.amountEdit->text().toInt();
 		bool   valid   = !ui.amountEdit->text().isEmpty() && amount > 0 && amount <= ui.enveloppes[fromIdx].getAmount();
 		ui.okButton->setEnabled(valid);
-	};
-}
-
-auto EnveloppesTransfer::makeUpdateFill(const TransferUi &ui) -> std::function<void()>
-{
-	return [=]()
-	{
-		int fromRaw = ui.fromBox->currentIndex();
-		int toRaw   = ui.toBox->currentIndex();
-
-		if ( fromRaw < 0 || toRaw < 0 || fromRaw == toRaw )
-			return ui.fillButton->setEnabled(false);
-
-		size_t fromIdx = static_cast<size_t>(fromRaw);
-		size_t toIdx   = static_cast<size_t>(toRaw);
-		ui.fillButton->setEnabled(
-		    EnveloppesTransfer::fillToGoal(ui.enveloppes[fromIdx], ui.enveloppes[toIdx]) > 0);
 	};
 }
 
@@ -338,25 +279,9 @@ void EnveloppesTransfer::applyTransfer(const TransferUi &ui)
 	g_enveloppeManager.transfer(from, to, amount);
 }
 
-int EnveloppesTransfer::fillToGoal(Enveloppe from, Enveloppe to)
-{
-	int amount;
-
-	if ( to.isSavings() )
-		amount = to.getGoal();
-	else
-		amount = std::max(0, to.getGoal() - to.getAmount());
-
-	if ( amount > from.getAmount() )
-		return 0;
-
-	return amount;
-}
-
 NewAmounts EnveloppesTransfer::newAmounts(Enveloppe from, Enveloppe to, int amount)
 {
 	NewAmounts newAmounts;
-
 	newAmounts.newFrom = from.getAmount() - amount;
 	newAmounts.newTo   = to.getAmount() + amount;
 	return newAmounts;

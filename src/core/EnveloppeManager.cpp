@@ -1,4 +1,5 @@
 #include "EnveloppeManager.hpp"
+#include "Globals.hpp"
 #include "json.hpp"
 
 #include <cstdlib>
@@ -195,24 +196,33 @@ void EnveloppeManager::modifyEnveloppe(const std::string &oldName, const std::st
 
 void EnveloppeManager::transfer(std::string from, std::string to, int amount)
 {
+	auto apply = [&](Enveloppe &e, const std::string &name, int delta)
+	{
+		if ( e.getName() == name )
+		{
+			e.setAmount(e.getAmount() + delta);
+			return true;
+		}
+
+		return false;
+	};
+
 	int found = 0;
 
 	for ( Enveloppe &e : enveloppes )
 	{
-		if ( e.getName() == from )
-		{
-			e.setAmount(e.getAmount() - amount);
-
+		if ( apply(e, from, -amount) || apply(e, to, amount) )
 			if ( ++found == 2 )
 				break;
-		}
-		else if ( e.getName() == to )
-		{
-			e.setAmount(e.getAmount() + amount);
+	}
 
-			if ( ++found == 2 )
-				break;
-		}
+	if ( found < 2 )
+	{
+		if ( apply(creditEnveloppe, from, -amount) || apply(creditEnveloppe, to, amount) )
+			++found;
+
+		if ( apply(incomeEnveloppe, from, -amount) || apply(incomeEnveloppe, to, amount) )
+			++found;
 	}
 
 	saveEnveloppesToJson();
@@ -220,6 +230,15 @@ void EnveloppeManager::transfer(std::string from, std::string to, int amount)
 
 void EnveloppeManager::addTypeAndExpense(const std::string &name, const Expense &e, bool rememberType)
 {
+	if ( g_enveloppeManager.getCreditEnveloppe().getName() == name )
+	{
+		if ( rememberType )
+			g_enveloppeManager.getCreditEnveloppe().addType(e.info);
+
+		addExpense(e, g_enveloppeManager.getCreditEnveloppe());
+		return;
+	}
+
 	for ( auto &env : getEnveloppes() )
 		if ( env.getName() == name )
 		{
