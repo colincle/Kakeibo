@@ -214,7 +214,7 @@ std::vector<Expense> Parser::fillExpensesStructRakuten(std::vector<std::string> 
 		e.amount    = std::stoi(amountStr);
 		e.info      = description;
 		e.enveloppe = "";
-		e.isCredit  = (e.amount > 0);
+		e.isCredit  = false;
 
 		expenses.push_back(e);
 

@@ -23,7 +23,6 @@ void EnveloppesTransfer::transfer(QWidget *parent)
 	QDialog dialog(parent);
 	setupDialogStyle(dialog);
 
-	// include all enveloppes + special ones
 	std::vector<Enveloppe> envs = g_enveloppeManager.getEnveloppes();
 	envs.push_back(g_enveloppeManager.getCreditEnveloppe());
 	envs.push_back(g_enveloppeManager.getIncomeEnveloppe());
@@ -103,7 +102,7 @@ TransferUi EnveloppesTransfer::createUiElements(QDialog &dialog, const std::vect
 	    fromBox,
 	    toBox,
 	    new QLineEdit(&dialog),
-	    nullptr, // no fill button anymore
+	    nullptr,
 	    new QLabel(&dialog),
 	    buttons,
 	    envs,
