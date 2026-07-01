@@ -35,7 +35,7 @@ class History : public QWidget
 
 	std::string selected;
 
-	QComboBox   *enveloppeCombo;
+	QComboBox   *envelopeCombo;
 	QComboBox   *startCombo;
 	QComboBox   *endCombo;
 	QVBoxLayout *mainLayout;
@@ -52,12 +52,12 @@ class History : public QWidget
 
 	void setUpTable(KakeiboTable *table);
 
-	QHBoxLayout *createEnveloppeDropdown();
+	QHBoxLayout *createEnvelopeDropdown();
 	QHBoxLayout *createDateDropdowns();
 	QString      setUpComboStyleSheet();
 	void         setupDateDropdownWidgets();
 	void         initDateCombos();
 	void         connectDateComboSignals();
 
-	void handleRightClick(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc);
+	void handleRightClick(const QString &date, const QString &amount, const QString &envelope, const QString &desc);
 };

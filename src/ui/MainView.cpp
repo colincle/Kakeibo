@@ -2,8 +2,8 @@
 #include "Backups.hpp"
 #include "ConnectToCloud.hpp"
 #include "Dispatch.hpp"
-#include "EnveloppesTransfer.hpp"
-#include "EnveloppesUi.hpp"
+#include "EnvelopesTransfer.hpp"
+#include "EnvelopesUi.hpp"
 #include "History.hpp"
 #include "ImportExpenses.hpp"
 #include "MenuBar.hpp"
@@ -22,8 +22,8 @@ MainView::MainView(MenuBar *menuBar, QWidget *parent) : QWidget(parent), menuBar
 	stack = new QStackedWidget(this);
 	layout->addWidget(stack);
 
-	enveloppesUI = new EnveloppesUi(this);
-	stack->addWidget(enveloppesUI);
+	envelopesUI = new EnvelopesUi(this);
+	stack->addWidget(envelopesUI);
 
 	history = new History(this);
 	stack->addWidget(history);
@@ -37,57 +37,54 @@ MainView::MainView(MenuBar *menuBar, QWidget *parent) : QWidget(parent), menuBar
 	stack->setCurrentIndex(0);
 
 	connect(menuBar, &MenuBar::menuButtonClicked, this, &MainView::handleMenuAction);
-	connect(enveloppesUI, &EnveloppesUi::updateNeeded, this, &MainView::updatePages);
+	connect(envelopesUI, &EnvelopesUi::updateNeeded, this, &MainView::updatePages);
 	connect(history, &History::updateNeeded, this, &MainView::updatePages);
 	connect(dispatch, &Dispatch::updateNeeded, this, &MainView::updatePages);
 }
 
 void MainView::handleMenuAction(int index)
 {
-	switch ( index )
+	switch ( static_cast<MenuAction>(index) )
 	{
-	case 0:
-		stack->setCurrentWidget(enveloppesUI);
+	case MenuAction::Envelopes:
+		stack->setCurrentWidget(envelopesUI);
 		break;
 
-	case 1:
+	case MenuAction::History:
 		stack->setCurrentWidget(history);
 		break;
 
-	case 2:
+	case MenuAction::Stats:
 		stack->setCurrentWidget(stats);
 		break;
 
-	case 3:
+	case MenuAction::Dispatch:
 		stack->setCurrentWidget(dispatch);
 		break;
 
-	case 4:
+	case MenuAction::Import:
 		ImportExpenses::import(this);
 		updatePages();
 		break;
 
-	case 5:
-		EnveloppesTransfer::transfer(this);
+	case MenuAction::Transfer:
+		EnvelopesTransfer::transfer(this);
 		updatePages();
 		break;
 
-	case 6:
-		enveloppesUI->addEnveloppe("");
+	case MenuAction::AddEnvelope:
+		envelopesUI->addEnvelope("");
 		updatePages();
-		break;
-
-	default:
 		break;
 	}
 }
 
 void MainView::updatePages()
 {
-	enveloppesUI->showEnveloppes();
+	envelopesUI->showEnvelopes();
 	history->showHistory();
 	stats->showStats();
 	dispatch->showDispatch();
 	menuBar.updateTotalLabel();
-	ConnectToCloud::sendCardsToCloud(enveloppesUI->getCloudCardWidgets());
+	ConnectToCloud::sendCardsToCloud(envelopesUI->getCloudCardWidgets());
 }

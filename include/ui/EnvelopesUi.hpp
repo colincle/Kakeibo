@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Enveloppe.hpp"
+#include "Envelope.hpp"
 
 #include <QList>
 #include <QString>
@@ -19,7 +19,7 @@ class QTimer;
 class QVBoxLayout;
 class QHBoxLayout;
 
-class EnveloppesUi : public QWidget
+class EnvelopesUi : public QWidget
 {
 	Q_OBJECT
 
@@ -27,16 +27,16 @@ class EnveloppesUi : public QWidget
 	void updateNeeded();
 
   public:
-	explicit EnveloppesUi(QWidget *parent = nullptr);
-	void             showEnveloppes();
-	void             addEnveloppe(std::string name);
+	explicit EnvelopesUi(QWidget *parent = nullptr);
+	void             showEnvelopes();
+	void             addEnvelope(std::string name);
 	QList<QWidget *> getCloudCardWidgets() { return cloudCardWidgets; }
 
   protected:
 	void resizeEvent(QResizeEvent *event) override;
 
   private:
-	struct EnveloppeFormFields
+	struct EnvelopeFormFields
 	{
 		QLineEdit *nameFrInput    = nullptr;
 		QLineEdit *nameJpInput    = nullptr;
@@ -60,26 +60,26 @@ class EnveloppesUi : public QWidget
 	void populateGrid(int columnCount);
 
 	void                 showTopInfo();
-	QWidget             *createCard(const Enveloppe &env);
+	QWidget             *createCard(const Envelope &env);
 	QVBoxLayout         *setupCardLayout(QWidget *card);
-	void                 addCardContent(QVBoxLayout *layout, const Enveloppe &env, const QString &barColor, int percent);
-	QWidget             *createCardButtons(const Enveloppe &env);
-	QList<QPushButton *> createCardButtonList(const Enveloppe &env);
-	void                 connectCardButtons(const Enveloppe &env, const QList<QPushButton *> &buttons);
+	void                 addCardContent(QVBoxLayout *layout, const Envelope &env, const QString &barColor, int percent);
+	QWidget             *createCardButtons(const Envelope &env);
+	QList<QPushButton *> createCardButtonList(const Envelope &env);
+	void                 connectCardButtons(const Envelope &env, const QList<QPushButton *> &buttons);
 	QWidget             *createProgressLabel(QString barColor, int percent);
-	QWidget             *createGoalMaxLabel(const Enveloppe &env);
-	QString              getProgressBarColor(int percent, const Enveloppe &env);
+	QWidget             *createGoalMaxLabel(const Envelope &env);
+	QString              getProgressBarColor(int percent, const Envelope &env);
 
-	void deleteEnveloppe(Enveloppe env);
+	void deleteEnvelope(const Envelope &env);
 	void showNonEmptyWarning();
 	bool confirmDeletion();
 	void addDialogButtons(QDialog *dialog, QFormLayout *layout);
-	void handleEnveloppeSubmission(const EnveloppeFormFields &f, std::string name);
-	void createFields(QDialog *dialog, QFormLayout *layout, EnveloppeFormFields &f);
-	void setupEnveloppeDialog(QDialog &dialog);
-	void preFillFieldsFromName(const std::string &name, EnveloppeFormFields &fields);
+	void handleEnvelopeSubmission(const EnvelopeFormFields &f, std::string name);
+	void createFields(QDialog *dialog, QFormLayout *layout, EnvelopeFormFields &f);
+	void setupEnvelopeDialog(QDialog &dialog);
+	void preFillFieldsFromName(const std::string &name, EnvelopeFormFields &fields);
 
 	KakeiboScrollArea *createScrollArea(QWidget *content);
-	void               clearEnveloppes();
+	void               clearEnvelopes();
 	QString            dialogStyleSheet();
 };

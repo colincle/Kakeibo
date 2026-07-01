@@ -48,11 +48,3 @@ int main(int argc, char *argv[])
 	window->show();
 	return app.exec();
 }
-/*
-TO DO
-Total check
-credit
-weird left border on tab click
-lock red color
-subclass all redondant widgets (look for styleSheet)
-*/

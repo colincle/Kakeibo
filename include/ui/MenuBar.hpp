@@ -7,6 +7,21 @@ class QHBoxLayout;
 class QLabel;
 class QPushButton;
 
+// Identifies which menu entry was clicked. The first MENU_PAGE_COUNT values are
+// the page tabs (in stack order); the rest are one-shot actions.
+enum class MenuAction
+{
+	Envelopes,
+	History,
+	Stats,
+	Dispatch,
+	Import,
+	Transfer,
+	AddEnvelope
+};
+
+inline constexpr int MENU_PAGE_COUNT = 4;
+
 class MenuBar : public QWidget
 {
 	Q_OBJECT

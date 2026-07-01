@@ -47,26 +47,12 @@ void MenuBar::updateTotalLabel()
 
 	int total = 0;
 
-	for ( const auto &e : g_enveloppeManager.getEnveloppes() )
+	for ( const auto &e : g_envelopeManager.getEnvelopes() )
 		total += e.getAmount();
 
-	total += g_enveloppeManager.getIncomeEnveloppe().getAmount();
+	total += g_envelopeManager.getIncomeEnvelope().getAmount();
 
-	QLocale jp(QLocale::Japanese, QLocale::Japan);
-	QString formattedYen = jp.toString(total);
-
-	QString formattedEur;
-	float   rate = getEurJpyRateCached();
-
-	if ( rate > 0 )
-	{
-		QLocale fr(QLocale::French, QLocale::France);
-		formattedEur = fr.toString(total / rate, 'f', 2) + "€";
-	}
-	else
-		formattedEur = "-€";
-
-	totalLabel->setText(QString("¥%1 | %2").arg(formattedYen, formattedEur));
+	totalLabel->setText(QString("¥%1 | %2€").arg(Money::yen(total), Money::euro(total)));
 }
 
 void MenuBar::setStyle()
@@ -105,7 +91,7 @@ void MenuBar::addActionsButtons(QHBoxLayout *layout)
 		layout->addWidget(btn);
 		buttons.append(btn);
 
-		int index = i + 4; // This magic number is the amount of pages buttons that come before
+		int index = i + MENU_PAGE_COUNT; // action buttons follow the page tabs
 		connect(btn, &QPushButton::clicked, this, [this, index]()
 		        { emit menuButtonClicked(index); });
 	}

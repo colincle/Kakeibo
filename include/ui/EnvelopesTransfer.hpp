@@ -16,7 +16,7 @@ class QFormLayout;
 class QHBoxLayout;
 class QListView;
 
-class Enveloppe;
+class Envelope;
 
 struct NewAmounts
 {
@@ -26,29 +26,29 @@ struct NewAmounts
 
 struct TransferUi
 {
-	QComboBox             *fromBox;
-	QComboBox             *toBox;
-	QLineEdit             *amountEdit;
-	QPushButton           *fillButton;
-	QLabel                *previewLabel;
-	QDialogButtonBox      *buttons;
-	std::vector<Enveloppe> enveloppes;
-	QPushButton           *okButton;
-	QPushButton           *cancelButton;
+	QComboBox            *fromBox;
+	QComboBox            *toBox;
+	QLineEdit            *amountEdit;
+	QPushButton          *fillButton;
+	QLabel               *previewLabel;
+	QDialogButtonBox     *buttons;
+	std::vector<Envelope> envelopes;
+	QPushButton          *okButton;
+	QPushButton          *cancelButton;
 };
 
-class EnveloppesTransfer final
+class EnvelopesTransfer final
 {
   private:
-	EnveloppesTransfer()                                      = delete;
-	~EnveloppesTransfer()                                     = delete;
-	EnveloppesTransfer(const EnveloppesTransfer &)            = delete;
-	EnveloppesTransfer &operator=(const EnveloppesTransfer &) = delete;
-	EnveloppesTransfer(EnveloppesTransfer &&)                 = delete;
-	EnveloppesTransfer &operator=(EnveloppesTransfer &&)      = delete;
+	EnvelopesTransfer()                                     = delete;
+	~EnvelopesTransfer()                                    = delete;
+	EnvelopesTransfer(const EnvelopesTransfer &)            = delete;
+	EnvelopesTransfer &operator=(const EnvelopesTransfer &) = delete;
+	EnvelopesTransfer(EnvelopesTransfer &&)                 = delete;
+	EnvelopesTransfer &operator=(EnvelopesTransfer &&)      = delete;
 
 	static void       setupDialogStyle(QDialog &dialog);
-	static TransferUi createUiElements(QDialog &dialog, const std::vector<Enveloppe> &envs);
+	static TransferUi createUiElements(QDialog &dialog, const std::vector<Envelope> &envs);
 	static QComboBox *createComboBox(QDialog &dialog);
 	static std::tuple<QDialogButtonBox *, QPushButton *, QPushButton *>
 	createDialogButtons(QDialog &dialog);
@@ -62,13 +62,10 @@ class EnveloppesTransfer final
 	static void         styleWidgets(TransferUi &ui);
 	static void         addComboBoxes(QFormLayout *layout, TransferUi &ui);
 
-	static std::function<void()> makeFillHandler(TransferUi &ui);
 	static std::function<void()> makeUpdateOk(const TransferUi &ui);
-	static std::function<void()> makeUpdateFill(const TransferUi &ui);
 	static std::function<void()> makeUpdatePreview(const TransferUi &ui);
 
   public:
 	static void       transfer(QWidget *parent);
-	static int        fillToGoal(Enveloppe from, Enveloppe to);
-	static NewAmounts newAmounts(Enveloppe from, Enveloppe to, int amount);
+	static NewAmounts newAmounts(const Envelope &from, const Envelope &to, int amount);
 };

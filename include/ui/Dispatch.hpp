@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Enveloppe.hpp"
-#include "EnveloppeManager.hpp"
+#include "Envelope.hpp"
+#include "EnvelopeManager.hpp"
 
 #include <QList>
 #include <QWidget>
@@ -33,15 +33,15 @@ class Dispatch : public QWidget
 		QLabel       *amountLabel;
 		QProgressBar *progressBar;
 		QLabel       *percentLabel;
-		Enveloppe    *env;
+		Envelope     *env;
 		QPushButton  *lockButton;
 	};
 
 	struct Operation
 	{
-		int        amountAdded;
-		Enveloppe *env;
-		bool       lockSwitch;
+		int       amountAdded;
+		Envelope *env;
+		bool      lockSwitch;
 	};
 
 	std::vector<std::vector<Operation>> undoStack;
@@ -50,27 +50,25 @@ class Dispatch : public QWidget
 	QVBoxLayout       *layout        = nullptr;
 	KakeiboScrollArea *scrollArea    = nullptr;
 	QWidget           *scrollContent = nullptr;
-	EnveloppeManager   dispatchManagerCopy;
+	EnvelopeManager    dispatchManagerCopy;
 	QList<DispatchRow> dispatchRows;
 	DispatchRow        incomeRow;
 
-	void appendIncomeRow(Enveloppe &env);
+	void appendIncomeRow(Envelope &env);
 	void addIncomeRowButtons(QHBoxLayout *rowLayout);
 	void connectIncomeRowButtons(QPushButton *undoBtn, QPushButton *redoBtn, QPushButton *applyBtn, QPushButton *dispatchBtn);
 
-	void         appendRow(Enveloppe &env, EnveloppeManager &allEnvs);
-	void         addNameLabel(QHBoxLayout *rowLayout, const Enveloppe &env);
-	void         addAmountLabel(QHBoxLayout *rowLayout, int amount);
-	void         addProgressBar(QHBoxLayout *rowLayout, int amount, int goal);
-	QPushButton *addButtons(QHBoxLayout *rowLayout, Enveloppe *env, EnveloppeManager &allEnvs);
-	void         connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushButton *minusBtn, QPushButton *lockBtn, Enveloppe *env, EnveloppeManager &allEnvs);
+	void         appendRow(Envelope &env, EnvelopeManager &allEnvs);
+	void         addNameLabel(QHBoxLayout *rowLayout, const Envelope &env);
+	QPushButton *addButtons(QHBoxLayout *rowLayout, Envelope *env, EnvelopeManager &allEnvs);
+	void         connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushButton *minusBtn, QPushButton *lockBtn, Envelope *env, EnvelopeManager &allEnvs);
 
 	void updateRow(const DispatchRow &row);
 	void updateAllRows();
 
-	void fill(Enveloppe *env, EnveloppeManager &allEnvs);
-	void incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs);
-	void decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs);
+	void fill(Envelope *env, EnvelopeManager &allEnvs);
+	void incrementDispatch(Envelope *env, EnvelopeManager &allEnvs);
+	void decrementDispatch(Envelope *env, EnvelopeManager &allEnvs);
 	void dispatchIncomeEvenly();
 
 	void apply();

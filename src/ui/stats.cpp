@@ -1,8 +1,10 @@
 #include "Stats.hpp"
 #include "Assets.hpp"
+#include "DateRange.hpp"
 #include "Globals.hpp"
 #include "KakeiboScrollArea.hpp"
 #include "KakeiboTable.hpp"
+#include "Theme.hpp"
 
 #include <QAbstractItemView>
 #include <QComboBox>
@@ -70,7 +72,7 @@ void Stats::populateTable(QTableWidget *table)
 	if ( !table )
 		return;
 
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
+	for ( const auto &env : g_envelopeManager.getEnvelopes() )
 	{
 		auto [total, perMonthAvg, perYearAvg] = calculateExpenseStats(env);
 
@@ -173,56 +175,17 @@ void Stats::connectDateSignals()
 
 QString Stats::setUpComboStyleSheet()
 {
-	return QString(R"(
-			QComboBox {
-				background-color: #1B272A;
-				color: #E1E1E2;
-				border: 1px solid #444;
-				border-radius: 4px;
-				padding-left: 6px;
-				min-height: 28px;
-				min-width: 70px;
-			}
-			QComboBox::drop-down {
-				subcontrol-origin: padding;
-				subcontrol-position: top right;
-				width: 25px;
-				border-left: 1px solid #444;
-				background-color: #2F3D41;
-			}
-			QComboBox::down-arrow {
-				image: url(%1);
-				width: 12px;
-				height: 12px;
-			}
-		)")
-	    .arg(DOWN_ICON);
+	return Theme::comboBoxStyle(DOWN_ICON);
 }
 
 void Stats::updateGlobalDateRange()
 {
-	static bool                          firstTime = true;
-	std::optional<std::chrono::sys_days> minDate, maxDate;
+	static bool firstTime = true;
 
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
+	if ( auto range = expenseDateRange() )
 	{
-		for ( const auto &exp : env.getExpenses() )
-		{
-			if ( !minDate || exp.date < *minDate )
-				minDate = exp.date;
-
-			if ( !maxDate || exp.date > *maxDate )
-				maxDate = exp.date;
-		}
-	}
-
-	if ( minDate && maxDate )
-	{
-		auto ymdMin     = std::chrono::year_month_day {*minDate};
-		globalStartDate = std::chrono::year_month {ymdMin.year(), ymdMin.month()};
-
-		auto ymdMax   = std::chrono::year_month_day {*maxDate};
-		globalEndDate = std::chrono::year_month {ymdMax.year(), ymdMax.month()};
+		globalStartDate = range->first;
+		globalEndDate   = range->second;
 
 		if ( firstTime )
 		{
@@ -233,7 +196,7 @@ void Stats::updateGlobalDateRange()
 	}
 }
 
-std::tuple<int, int, int> Stats::calculateExpenseStats(const Enveloppe &env)
+std::tuple<int, int, int> Stats::calculateExpenseStats(const Envelope &env)
 {
 	int total = 0;
 

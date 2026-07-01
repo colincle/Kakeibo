@@ -9,21 +9,40 @@
 #include <string>
 #include <vector>
 
+namespace
+{
+// Parse an integer, returning fallback instead of throwing on malformed input.
+int parseIntOr(const std::string &s, int fallback)
+{
+	try
+	{
+		return std::stoi(s);
+	}
+	catch ( const std::exception & )
+	{
+		return fallback;
+	}
+}
+} // namespace
+
 std::vector<Expense> Parser::parseExpenses(std::string data, std::chrono::year year)
 {
 	data                           = convertFullWidthToAscii(data);
 	std::vector<std::string> lines = splitIntoLines(data);
 	lines                          = removeEmptyLines(lines);
 
+	if ( lines.empty() )
+		return {};
+
 	switch ( whichBank(lines[0]) )
 	{
-	case RAKUTEN:
+	case Bank::Rakuten:
 		return fillExpensesStructRakuten(lines);
 
-	case MITSUBISHI:
+	case Bank::Mitsubishi:
 		return fillExpensesStructMitsubishi(lines, year);
 
-	case RAKUTEN_CREDIT:
+	case Bank::RakutenCredit:
 		return fillExpensesStructRakutenCredit(lines);
 
 	default:
@@ -101,15 +120,28 @@ std::vector<std::string> Parser::removeEmptyLines(const std::vector<std::string>
 	return result;
 }
 
-int Parser::whichBank(std::string line)
+Bank Parser::whichBank(std::string line)
 {
 	size_t pos = line.find('\t');
 
 	if ( pos == std::string::npos )
-		return 0;
+		return Bank::Rakuten;
 
 	line = line.substr(0, pos);
-	return static_cast<int>(std::count(line.begin(), line.end(), '/'));
+
+	// The export formats are distinguished by how many '/' appear in the first
+	// column of the first row (i.e. the shape of its date field).
+	switch ( std::count(line.begin(), line.end(), '/') )
+	{
+	case 1:
+		return Bank::Mitsubishi;
+
+	case 2:
+		return Bank::RakutenCredit;
+
+	default:
+		return Bank::Rakuten;
+	}
 }
 
 std::vector<Expense> Parser::fillExpensesStructRakutenCredit(std::vector<std::string> lines)
@@ -150,11 +182,11 @@ std::vector<Expense> Parser::fillExpensesStructRakutenCredit(std::vector<std::st
 			e.date = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
 		}
 
-		int amount  = std::stoi(amountStr);
-		e.amount    = -amount;
-		e.info      = description;
-		e.enveloppe = "";
-		e.isCredit  = true;
+		int amount = parseIntOr(amountStr, 0);
+		e.amount   = -amount;
+		e.info     = description;
+		e.envelope = "";
+		e.isCredit = true;
 
 		expenses.push_back(e);
 	}
@@ -211,10 +243,10 @@ std::vector<Expense> Parser::fillExpensesStructRakuten(std::vector<std::string> 
 		std::istringstream(dateStr) >> y >> sep1 >> m >> sep2 >> d;
 		e.date = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
 
-		e.amount    = std::stoi(amountStr);
-		e.info      = description;
-		e.enveloppe = "";
-		e.isCredit  = false;
+		e.amount   = parseIntOr(amountStr, 0);
+		e.info     = description;
+		e.envelope = "";
+		e.isCredit = false;
 
 		expenses.push_back(e);
 
@@ -253,12 +285,20 @@ std::vector<Expense> Parser::fillExpensesStructMitsubishi(std::vector<std::strin
 		trim(creditStr);
 
 		Expense e;
-		e.date = parseShortDate(year, date);
+
+		try
+		{
+			e.date = parseShortDate(year, date);
+		}
+		catch ( const std::exception & )
+		{
+			continue;
+		}
 
 		if ( !debitStr.empty() )
-			e.amount = -std::stoi(debitStr);
+			e.amount = -parseIntOr(debitStr, 0);
 		else if ( !creditStr.empty() )
-			e.amount = std::stoi(creditStr);
+			e.amount = parseIntOr(creditStr, 0);
 		else
 			continue;
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <ExpenseStruct.hpp>
+#include "ExpenseStruct.hpp"
 
 #include <string>
 
-class Enveloppe
+class Envelope
 {
   private:
 	std::string              name;
@@ -19,14 +19,14 @@ class Enveloppe
 	bool                     locked;
 
   public:
-	Enveloppe()
-	    : name(""), amount(0), dispatchAmount(0), maxAmount(0), goal(0), savings(0), types {}, locked(false) {}
+	Envelope()
+	    : name(""), amount(0), dispatchAmount(0), maxAmount(0), goal(0), savings(false), types {}, cloud(false), locked(false) {}
 
-	Enveloppe(const std::string &name, int amount, int maxAmount, int goal, bool savings)
-	    : name(name), amount(amount), dispatchAmount(0), maxAmount(maxAmount), goal(goal), savings(savings), types {}, locked(false) {}
+	Envelope(const std::string &name, int amount, int maxAmount, int goal, bool savings)
+	    : name(name), amount(amount), dispatchAmount(0), maxAmount(maxAmount), goal(goal), savings(savings), types {}, cloud(false), locked(false) {}
 
-	Enveloppe(const Enveloppe &other)            = default;
-	Enveloppe &operator=(const Enveloppe &other) = default;
+	Envelope(const Envelope &other)            = default;
+	Envelope &operator=(const Envelope &other) = default;
 
 	const std::string              &getName() const { return name; }
 	int                             getAmount() const { return amount; }
@@ -48,7 +48,7 @@ class Enveloppe
 	void setSavings(bool newSavings) { savings = newSavings; }
 	void addType(const std::string &type) { types.push_back(type); }
 	void addExpense(const int expense) { amount += expense; }
-	void addToExpenseVector(const Expense e) { expenses.push_back(e); }
+	void addToExpenseVector(const Expense &e) { expenses.push_back(e); }
 	void setExpenses(const std::vector<Expense> &exps) { expenses = exps; }
 	void setTypes(const std::vector<std::string> &t) { types = t; }
 	void setCloud(const bool isCloud) { cloud = isCloud; }

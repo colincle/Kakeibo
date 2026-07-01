@@ -1,8 +1,9 @@
 #include "ImportExpenses.hpp"
 #include "Assets.hpp"
-#include "Enveloppe.hpp"
+#include "Envelope.hpp"
 #include "Globals.hpp"
 #include "Parser.hpp"
+#include "Theme.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -95,99 +96,27 @@ void ImportExpenses::addDialogButtons(QDialog *dialog, QVBoxLayout *layout)
 
 QString ImportExpenses::setDialogStyleSheet()
 {
-	return QString(R"(
-		QDialog {
-			background-color: #242F32;
-			color: #E1E1E2;
-			font-family: "Helvetica Neue";
-		}
-		QLabel {
-			color: #E1E1E2;
-		}
-		QLineEdit, QComboBox, QPlainTextEdit {
-			background-color: #1B272A;
-			color: #E1E1E2;
-			border: 1px solid #444;
-			border-radius: 4px;
-			padding: 4px;
-			min-height: 28px;
-			padding-left: 6px;
-		}
-		QComboBox::drop-down {
-			subcontrol-origin: padding;
-			subcontrol-position: top right;
-			width: 25px;
-			border-left: 1px solid #444;
-			background-color: #2F3D41;
-		}
-		QComboBox::down-arrow {
-			image: url(%1);
-			width: 12px;
-			height: 12px;
-		}
-		QListView {
-			background-color: #1B272A;
-			color: #E1E1E2;
-		}
-		QListView::item:selected {
-			background-color: #2F3D41;
-			color: #E1E1E2;
-		}
-		QScrollBar:vertical {
-			background: transparent;
-			width: 8px;
-			margin: 3px 0;
-			border-radius: 4px;
-		}
-		QScrollBar::handle:vertical {
-			background: #1B272A;
-			min-height: 20px;
-			border-radius: 4px;
-		}
-		QScrollBar::add-line:vertical,
-		QScrollBar::sub-line:vertical {
-			height: 0;
-		}
-		QScrollBar::add-page:vertical,
-		QScrollBar::sub-page:vertical {
-			background: none;
-		}
-		QPushButton {
-			background-color: #1B272A;
-			color: #E1E1E2;
-			border: none;
-			padding: 6px 12px;
-			border-radius: 2px;
-			min-width: 80px;
-		}
-		QPushButton:hover {
-			background-color: #2F3D41;
-		}
-		QPushButton:disabled {
-			color: gray;
-		}
-	)")
-	    .arg(DOWN_ICON);
+	return Theme::dialogStyle(DOWN_ICON);
 }
 
 void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 {
-	auto &enveloppes = g_enveloppeManager.getEnveloppes();
-	bool  matched    = false;
+	auto &envelopes = g_envelopeManager.getEnvelopes();
+	bool  matched   = false;
 
 	if ( e.amount > 0 )
 	{
-		g_enveloppeManager.addExpense(e, g_enveloppeManager.getIncomeEnveloppe());
+		g_envelopeManager.addExpense(e, g_envelopeManager.getIncomeEnvelope());
 		return;
 	}
 
-	for ( auto &env : enveloppes )
+	for ( auto &env : envelopes )
 	{
 		for ( const std::string &type : env.getTypes() )
 		{
 			if ( e.info == type )
 			{
-				g_enveloppeManager.addExpense(e, env);
+				g_envelopeManager.addExpense(e, env);
 				matched = true;
 				break;
 			}
@@ -197,11 +126,11 @@ void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 			break;
 	}
 
-	for ( const std::string &type : g_enveloppeManager.getCreditEnveloppe().getTypes() )
+	for ( const std::string &type : g_envelopeManager.getCreditEnvelope().getTypes() )
 	{
 		if ( e.info == type )
 		{
-			g_enveloppeManager.addExpense(e, g_enveloppeManager.getCreditEnveloppe());
+			g_envelopeManager.addExpense(e, g_envelopeManager.getCreditEnvelope());
 			matched = true;
 			break;
 		}
@@ -210,19 +139,19 @@ void ImportExpenses::addExpense(QWidget *parent, const Expense &e)
 	if ( !matched )
 	{
 		bool        rememberType = false;
-		std::string selected     = selectEnveloppeDialog(parent, enveloppes, e, rememberType);
-		g_enveloppeManager.addTypeAndExpense(selected, e, rememberType);
+		std::string selected     = selectEnvelopeDialog(parent, envelopes, e, rememberType);
+		g_envelopeManager.addTypeAndExpense(selected, e, rememberType);
 	}
 }
 
-std::string ImportExpenses::selectEnveloppeDialog(QWidget *parent, const std::vector<Enveloppe> &enveloppes, const Expense &e, bool &rememberType)
+std::string ImportExpenses::selectEnvelopeDialog(QWidget *parent, const std::vector<Envelope> &envelopes, const Expense &e, bool &rememberType)
 {
 	QStringList names;
 
-	for ( const auto &env : enveloppes )
+	for ( const auto &env : envelopes )
 		names << QString::fromStdString(env.getName());
 
-	names << QString::fromStdString(g_enveloppeManager.getCreditEnveloppe().getName());
+	names << QString::fromStdString(g_envelopeManager.getCreditEnvelope().getName());
 
 	QString selected;
 	QString label = buildDialogLabel(e);

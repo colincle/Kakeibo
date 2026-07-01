@@ -53,16 +53,16 @@ void Dispatch::showDispatch()
 	dispatchRows.clear();
 	undoStack.clear();
 
-	dispatchManagerCopy = EnveloppeManager(g_enveloppeManager);
-	appendIncomeRow(dispatchManagerCopy.getIncomeEnveloppe());
+	dispatchManagerCopy = EnvelopeManager(g_envelopeManager);
+	appendIncomeRow(dispatchManagerCopy.getIncomeEnvelope());
 
-	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
+	for ( auto &env : dispatchManagerCopy.getEnvelopes() )
 	{
 		if ( !env.isSavings() )
 		{
 			int diff = env.getAmount();
 			env.setAmount(0);
-			dispatchManagerCopy.getIncomeEnveloppe().setAmount(dispatchManagerCopy.getIncomeEnveloppe().getAmount() + diff);
+			dispatchManagerCopy.getIncomeEnvelope().setAmount(dispatchManagerCopy.getIncomeEnvelope().getAmount() + diff);
 		}
 
 		appendRow(env, dispatchManagerCopy);
@@ -72,7 +72,7 @@ void Dispatch::showDispatch()
 	scrollArea->restoreScroll();
 }
 
-void Dispatch::appendIncomeRow(Enveloppe &env)
+void Dispatch::appendIncomeRow(Envelope &env)
 {
 	if ( incomeRow.rowWidget )
 	{
@@ -134,7 +134,7 @@ void Dispatch::connectIncomeRowButtons(QPushButton *undoBtn, QPushButton *redoBt
 	        { apply(); });
 }
 
-void Dispatch::appendRow(Enveloppe &env, EnveloppeManager &allEnvs)
+void Dispatch::appendRow(Envelope &env, EnvelopeManager &allEnvs)
 {
 	auto *rowWidget = new QWidget;
 	auto *rowLayout = new QHBoxLayout(rowWidget);
@@ -164,7 +164,7 @@ void Dispatch::appendRow(Enveloppe &env, EnveloppeManager &allEnvs)
 	updateRow(dispatchRows.last());
 }
 
-void Dispatch::addNameLabel(QHBoxLayout *rowLayout, const Enveloppe &env)
+void Dispatch::addNameLabel(QHBoxLayout *rowLayout, const Envelope &env)
 {
 	auto *nameLabel = new QLabel(QString::fromStdString(env.getName()));
 	nameLabel->setMinimumWidth(130);
@@ -172,48 +172,7 @@ void Dispatch::addNameLabel(QHBoxLayout *rowLayout, const Enveloppe &env)
 	rowLayout->addWidget(nameLabel);
 }
 
-void Dispatch::addAmountLabel(QHBoxLayout *rowLayout, int amount)
-{
-	QLocale jp(QLocale::Japanese, QLocale::Japan);
-	QString formattedYen = jp.toString(amount);
-
-	QString formattedEur;
-	float   rate = getEurJpyRateCached();
-
-	if ( rate > 0 )
-	{
-		QLocale fr(QLocale::French, QLocale::France);
-		formattedEur = fr.toString(amount / rate, 'f', 2) + "€";
-	}
-	else
-		formattedEur = "-€";
-
-	auto *amountLabel = new QLabel(QString("¥%1\n%2").arg(formattedYen, formattedEur));
-	amountLabel->setFixedWidth(150);
-	amountLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-	amountLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-	rowLayout->addWidget(amountLabel);
-}
-
-void Dispatch::addProgressBar(QHBoxLayout *rowLayout, int amount, int goal)
-{
-	auto *bar = new QProgressBar;
-	bar->setFixedWidth(150);
-	bar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-	bar->setMaximum(100);
-
-	int percent = (goal > 0) ? (amount * 100 / goal) : 0;
-	bar->setValue(std::min(percent, 100));
-	bar->setTextVisible(false);
-	rowLayout->addWidget(bar);
-
-	auto *percentLabel = new QLabel(QString("%1%").arg(percent));
-	percentLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-	percentLabel->setMinimumWidth(40);
-	rowLayout->addWidget(percentLabel);
-}
-
-QPushButton *Dispatch::addButtons(QHBoxLayout *rowLayout, Enveloppe *env, EnveloppeManager &allEnvs)
+QPushButton *Dispatch::addButtons(QHBoxLayout *rowLayout, Envelope *env, EnvelopeManager &allEnvs)
 {
 	auto *btn = new QPushButton("Remplir 満たす");
 	btn->setStyleSheet(fillButtonStyle());
@@ -232,7 +191,7 @@ QPushButton *Dispatch::addButtons(QHBoxLayout *rowLayout, Enveloppe *env, Envelo
 	return lockBtn;
 }
 
-void Dispatch::connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushButton *minusBtn, QPushButton *lockBtn, Enveloppe *env, EnveloppeManager &allEnvs)
+void Dispatch::connectButtons(QPushButton *fillBtn, QPushButton *plusBtn, QPushButton *minusBtn, QPushButton *lockBtn, Envelope *env, EnvelopeManager &allEnvs)
 {
 	connect(fillBtn, &QPushButton::clicked, this, [this, env, &allEnvs](bool)
 	        { fill(env, allEnvs); });
@@ -258,16 +217,8 @@ void Dispatch::updateRow(const DispatchRow &row)
 	                 : row.env->getAmount();
 	int goal   = row.env->getGoal();
 
-	QLocale jp(QLocale::Japanese, QLocale::Japan);
-	QString yen = jp.toString(amount);
-
-	float   rate = getEurJpyRateCached();
-	QString eur  = (rate > 0)
-	                   ? QLocale(QLocale::French, QLocale::France).toString(amount / rate, 'f', 2) + "€"
-	                   : "-€";
-
 	if ( row.amountLabel )
-		row.amountLabel->setText(QString("¥%1\n%2").arg(yen, eur));
+		row.amountLabel->setText(QString("¥%1\n%2€").arg(Money::yen(amount), Money::euro(amount)));
 
 	if ( row.progressBar )
 	{
@@ -294,9 +245,9 @@ void Dispatch::updateAllRows()
 		updateRow(row);
 }
 
-void Dispatch::fill(Enveloppe *env, EnveloppeManager &allEnvs)
+void Dispatch::fill(Envelope *env, EnvelopeManager &allEnvs)
 {
-	auto &income       = allEnvs.getIncomeEnveloppe();
+	auto &income       = allEnvs.getIncomeEnvelope();
 	int   incomeAmount = income.getAmount();
 	int   current      = env->getDispatchAmount();
 	int   goal         = env->getGoal();
@@ -317,9 +268,9 @@ void Dispatch::fill(Enveloppe *env, EnveloppeManager &allEnvs)
 	updateAllRows();
 }
 
-void Dispatch::incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
+void Dispatch::incrementDispatch(Envelope *env, EnvelopeManager &allEnvs)
 {
-	auto &income       = allEnvs.getIncomeEnveloppe();
+	auto &income       = allEnvs.getIncomeEnvelope();
 	int   incomeAmount = income.getAmount();
 	int   goal         = env->getGoal();
 	int   current      = env->getDispatchAmount();
@@ -341,7 +292,7 @@ void Dispatch::incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
 
 	else
 	{
-		for ( auto &e : allEnvs.getEnveloppes() )
+		for ( auto &e : allEnvs.getEnvelopes() )
 		{
 			if ( &e == env || e.isLocked() )
 				continue;
@@ -370,7 +321,7 @@ void Dispatch::incrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
 	updateAllRows();
 }
 
-void Dispatch::decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
+void Dispatch::decrementDispatch(Envelope *env, EnvelopeManager &allEnvs)
 {
 	int current = env->getDispatchAmount();
 
@@ -381,7 +332,7 @@ void Dispatch::decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
 	int toRemove = std::min(sub, current);
 
 	env->setDispatchAmount(current - toRemove);
-	auto &income = allEnvs.getIncomeEnveloppe();
+	auto &income = allEnvs.getIncomeEnvelope();
 	income.setAmount(income.getAmount() + toRemove);
 
 	undoStack.push_back(
@@ -393,13 +344,13 @@ void Dispatch::decrementDispatch(Enveloppe *env, EnveloppeManager &allEnvs)
 
 void Dispatch::dispatchIncomeEvenly()
 {
-	auto &income       = dispatchManagerCopy.getIncomeEnveloppe();
+	auto &income       = dispatchManagerCopy.getIncomeEnvelope();
 	int   incomeAmount = income.getAmount();
 
-	QList<Enveloppe *> targets;
-	int                totalNeeded = 0;
+	QList<Envelope *> targets;
+	int               totalNeeded = 0;
 
-	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
+	for ( auto &env : dispatchManagerCopy.getEnvelopes() )
 	{
 		if ( !env.isLocked() )
 		{
@@ -461,7 +412,7 @@ void Dispatch::dispatchIncomeEvenly()
 
 void Dispatch::apply()
 {
-	for ( auto &env : dispatchManagerCopy.getEnveloppes() )
+	for ( auto &env : dispatchManagerCopy.getEnvelopes() )
 	{
 		env.setLocked(false);
 
@@ -469,14 +420,14 @@ void Dispatch::apply()
 		env.setDispatchAmount(0);
 	}
 
-	auto &originalEnvs = g_enveloppeManager.getEnveloppes();
-	originalEnvs       = dispatchManagerCopy.getEnveloppes();
+	auto &originalEnvs = g_envelopeManager.getEnvelopes();
+	originalEnvs       = dispatchManagerCopy.getEnvelopes();
 
-	auto &originalIncome = g_enveloppeManager.getIncomeEnveloppe();
-	auto &copyIncome     = dispatchManagerCopy.getIncomeEnveloppe();
+	auto &originalIncome = g_envelopeManager.getIncomeEnvelope();
+	auto &copyIncome     = dispatchManagerCopy.getIncomeEnvelope();
 	originalIncome.setAmount(copyIncome.getAmount());
 
-	g_enveloppeManager.saveEnveloppesToJson();
+	g_envelopeManager.saveEnvelopesToJson();
 	emit updateNeeded();
 }
 
@@ -494,7 +445,7 @@ void Dispatch::undo()
 	{
 		if ( op.lockSwitch )
 			op.env->setLocked(!op.env->isLocked());
-		else if ( op.env->getName() == "Revenus\n収入" )
+		else if ( op.env == &dispatchManagerCopy.getIncomeEnvelope() )
 			op.env->setAmount(op.env->getAmount() - op.amountAdded);
 		else
 			op.env->setDispatchAmount(op.env->getDispatchAmount() - op.amountAdded);
@@ -518,7 +469,7 @@ void Dispatch::redo()
 		if ( op.lockSwitch )
 			op.env->setLocked(!op.env->isLocked());
 
-		else if ( op.env->getName() == "Revenus\n収入" )
+		else if ( op.env == &dispatchManagerCopy.getIncomeEnvelope() )
 			op.env->setAmount(op.env->getAmount() + op.amountAdded);
 		else
 			op.env->setDispatchAmount(op.env->getDispatchAmount() + op.amountAdded);

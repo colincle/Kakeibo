@@ -1,40 +1,44 @@
 #include "ConnectToCloud.hpp"
-#include "Globals.hpp"
+#include "AppPaths.hpp"
 
-#include <QApplication>
-#include <QFile>
-#include <QFileDialog>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QList>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QPainter>
 #include <QPixmap>
-#include <QStandardPaths>
+#include <QWidget>
 #include <QtConcurrent/QtConcurrent>
-
-#include <filesystem>
-#include <iostream>
 
 void ConnectToCloud::sendCardsToCloud(const QList<QWidget *> &cloudWidgets)
 {
-	static QMutex                  mutex;
-	static QList<QList<QWidget *>> queue;
-	static bool                    running = false;
+	QString destPath = AppPaths::configuredDir("cloudPath.json", "Sélectionner le dossier de synchronisation / 同期フォルダを選択");
 
-	QString      destPath = getPath();
+	if ( destPath.isEmpty() )
+		return;
+
+	// Grab the widgets now, on the GUI thread, while they are guaranteed alive.
+	// The page rebuild (showEnvelopes) deletes and recreates these cards, so we
+	// must never hand raw widget pointers to the worker thread — only the
+	// resulting pixmaps (value types) cross the thread boundary.
+	QList<QPixmap> screenshots = takeScreenshots(cloudWidgets);
+
+	static QMutex                mutex;
+	static QList<QList<QPixmap>> queue;
+	static bool                  running = false;
+
 	QMutexLocker locker(&mutex);
-	queue.append(cloudWidgets);
+	queue.append(screenshots);
+
 	if ( running )
 		return;
+
 	running = true;
 
-	[[maybe_unused]] auto future = QtConcurrent::run([destPath, cloudWidgets]() mutable
+	[[maybe_unused]] auto future = QtConcurrent::run([destPath]()
 	                                                 {
 		while(true)
 		{
-			QList<QWidget *> task;
+			QList<QPixmap> task;
 			{
 				QMutexLocker innerLocker(&mutex);
 
@@ -48,90 +52,35 @@ void ConnectToCloud::sendCardsToCloud(const QList<QWidget *> &cloudWidgets)
 				queue.clear();
 			}
 
-			QList<QPixmap> screenshots = takeScreenshots(task);
-			QPixmap image = assembleIntoIPhoneShape(screenshots);
+			QPixmap image = assembleIntoGrid(task);
 			image.save(destPath + "/Kakeibo.png");
 		} });
 }
 
-QString ConnectToCloud::getPath()
-{
-	QString basePath = QString::fromStdString(std::filesystem::path(g_enveloppeManager.getPath()).string());
-	QString jsonPath = basePath + "/cloudPath.json";
-
-	if ( !QFile::exists(jsonPath) )
-	{
-		QFile newFile(jsonPath);
-
-		if ( newFile.open(QIODevice::WriteOnly) )
-		{
-			QJsonObject obj;
-			obj["path"] = "";
-			newFile.write(QJsonDocument(obj).toJson());
-			newFile.close();
-		}
-	}
-
-	QFile file(jsonPath);
-
-	if ( !file.open(QIODevice::ReadOnly) )
-		return "";
-
-	QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-	file.close();
-
-	QString storedPath = doc.object().value("path").toString();
-
-	if ( storedPath.isEmpty() || !QDir(storedPath).exists() )
-	{
-		QString chosenDir = QFileDialog::getExistingDirectory(nullptr, "Sélectionner le dossier de synchronisation / 同期フォルダを選択");
-
-		if ( chosenDir.isEmpty() )
-			return "";
-
-		QJsonObject newObj;
-		newObj["path"] = chosenDir;
-
-		if ( file.open(QIODevice::WriteOnly | QIODevice::Truncate) )
-		{
-			file.write(QJsonDocument(newObj).toJson());
-			file.close();
-		}
-
-		return chosenDir;
-	}
-
-	return storedPath;
-}
-
 QList<QPixmap> ConnectToCloud::takeScreenshots(const QList<QWidget *> &widgets)
 {
+	// Trim the card's drop-shadow padding so the tiled image sits flush.
 	const int cropTop    = 80;
 	const int cropBottom = 15;
 	const int cropRight  = 10;
 
 	QList<QPixmap> screenshots;
 
+	// Must run on the GUI thread: QWidget::grab() renders the live widget.
 	for ( QWidget *w : widgets )
 	{
-		QPixmap original;
-		QMetaObject::invokeMethod(QApplication::instance(), [&]()
-		                          { original = w->grab(); }, Qt::BlockingQueuedConnection);
-		int width  = original.width();
-		int height = original.height();
+		QPixmap original = w->grab();
 
-		int x             = 0;
-		int y             = cropTop;
-		int croppedWidth  = width - cropRight;
-		int croppedHeight = height - cropTop - cropBottom;
+		int croppedWidth  = original.width() - cropRight;
+		int croppedHeight = original.height() - cropTop - cropBottom;
 
-		screenshots.append(original.copy(x, y, croppedWidth, croppedHeight));
+		screenshots.append(original.copy(0, cropTop, croppedWidth, croppedHeight));
 	}
 
 	return screenshots;
 }
 
-QPixmap ConnectToCloud::assembleIntoIPhoneShape(const QList<QPixmap> &screenshots)
+QPixmap ConnectToCloud::assembleIntoGrid(const QList<QPixmap> &screenshots)
 {
 	if ( screenshots.isEmpty() )
 		return QPixmap();

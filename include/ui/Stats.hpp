@@ -5,7 +5,7 @@
 #include <chrono>
 #include <tuple>
 
-class Enveloppe;
+class Envelope;
 class KakeiboScrollArea;
 
 class QHBoxLayout;
@@ -38,7 +38,7 @@ class Stats : public QWidget
 	void clearStatsPage();
 
 	void                      populateTable(QTableWidget *table);
-	std::tuple<int, int, int> calculateExpenseStats(const Enveloppe &env);
+	std::tuple<int, int, int> calculateExpenseStats(const Envelope &env);
 
 	QHBoxLayout *createDateDropdowns();
 	void         setupDateWidgets();

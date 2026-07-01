@@ -1,7 +1,8 @@
-#include "EnveloppesUi.hpp"
+#include "EnvelopesUi.hpp"
 #include "Assets.hpp"
 #include "Globals.hpp"
 #include "KakeiboScrollArea.hpp"
+#include "Theme.hpp"
 
 #include <QCheckBox>
 #include <QDate>
@@ -23,11 +24,11 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#define CARD_WIDTH 350
-#define CARD_HEIGHT 380
-#define CARD_SHADOW_OFFSET 4
+constexpr int CARD_WIDTH         = 350;
+constexpr int CARD_HEIGHT        = 380;
+constexpr int CARD_SHADOW_OFFSET = 4;
 
-EnveloppesUi::EnveloppesUi(QWidget *parent) : QWidget(parent)
+EnvelopesUi::EnvelopesUi(QWidget *parent) : QWidget(parent)
 {
 	scrollContent = new QWidget(this);
 
@@ -63,12 +64,12 @@ EnveloppesUi::EnveloppesUi(QWidget *parent) : QWidget(parent)
 	resizeDebounceTimer = new QTimer(this);
 	resizeDebounceTimer->setSingleShot(true);
 	resizeDebounceTimer->setInterval(50);
-	connect(resizeDebounceTimer, &QTimer::timeout, this, &EnveloppesUi::showEnveloppes);
+	connect(resizeDebounceTimer, &QTimer::timeout, this, &EnvelopesUi::showEnvelopes);
 
-	showEnveloppes();
+	showEnvelopes();
 }
 
-void EnveloppesUi::resizeEvent(QResizeEvent *event)
+void EnvelopesUi::resizeEvent(QResizeEvent *event)
 {
 	QWidget::resizeEvent(event);
 
@@ -76,7 +77,7 @@ void EnveloppesUi::resizeEvent(QResizeEvent *event)
 		resizeDebounceTimer->start();
 }
 
-void EnveloppesUi::showEnveloppes()
+void EnvelopesUi::showEnvelopes()
 {
 	if ( !scrollArea || !gridLayout )
 		return;
@@ -93,7 +94,7 @@ void EnveloppesUi::showEnveloppes()
 	scrollArea->restoreScroll();
 }
 
-void EnveloppesUi::clearGrid()
+void EnvelopesUi::clearGrid()
 {
 	QLayoutItem *item;
 
@@ -108,7 +109,7 @@ void EnveloppesUi::clearGrid()
 	cloudCardWidgets.clear();
 }
 
-void EnveloppesUi::showTopInfo()
+void EnvelopesUi::showTopInfo()
 {
 	topInfoLayout->setAlignment(Qt::AlignTop);
 	topInfoLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -120,19 +121,16 @@ void EnveloppesUi::showTopInfo()
 		delete item;
 	}
 
-	const auto &income = g_enveloppeManager.getIncomeEnveloppe();
-	const auto &credit = g_enveloppeManager.getCreditEnveloppe();
+	const auto &income = g_envelopeManager.getIncomeEnvelope();
+	const auto &credit = g_envelopeManager.getCreditEnvelope();
 
-	auto addEntry = [this](const Enveloppe &env)
+	auto addEntry = [this](const Envelope &env)
 	{
 		QString name = QString::fromStdString(env.getName()).replace("\n", " ");
 
-		QLocale jp(QLocale::Japanese, QLocale::Japan);
-		QLocale fr(QLocale::French, QLocale::France);
-		float   rate = getEurJpyRateCached();
-
-		QString jpy = "¥ " + jp.toString(env.getAmount());
-		QString eur = rate > 0 ? "€ " + fr.toString(env.getAmount() / rate, 'f', 2) : "-€";
+		QString jpy    = "¥ " + Money::yen(env.getAmount());
+		QString eurNum = Money::euro(env.getAmount(), QString());
+		QString eur    = eurNum.isEmpty() ? "-€" : "€ " + eurNum;
 
 		auto *label = new QLabel(name + " — " + jpy + " / " + eur);
 		label->setStyleSheet(R"(
@@ -148,7 +146,7 @@ void EnveloppesUi::showTopInfo()
 	addEntry(credit);
 }
 
-int EnveloppesUi::computeColumnCount() const
+int EnvelopesUi::computeColumnCount() const
 {
 	const int cardMinWidth = CARD_WIDTH;
 	const int spacing      = gridLayout->spacing();
@@ -157,17 +155,17 @@ int EnveloppesUi::computeColumnCount() const
 	return std::max(1, totalWidth / (cardMinWidth + spacing));
 }
 
-void EnveloppesUi::populateGrid(int columnCount)
+void EnvelopesUi::populateGrid(int columnCount)
 {
-	const auto &enveloppes = g_enveloppeManager.getEnveloppes();
+	const auto &envelopes = g_envelopeManager.getEnvelopes();
 	int         row = 0, col = 0;
 
-	for ( std::size_t i = 0; i < enveloppes.size(); ++i )
+	for ( std::size_t i = 0; i < envelopes.size(); ++i )
 	{
-		QWidget *card = createCard(enveloppes[i]);
+		QWidget *card = createCard(envelopes[i]);
 		gridLayout->addWidget(card, row, col++);
 
-		if ( enveloppes[i].isCloud() )
+		if ( envelopes[i].isCloud() )
 			cloudCardWidgets.append(card);
 
 		if ( col == columnCount )
@@ -190,7 +188,7 @@ void EnveloppesUi::populateGrid(int columnCount)
 	}
 }
 
-QWidget *EnveloppesUi::createCard(const Enveloppe &env)
+QWidget *EnvelopesUi::createCard(const Envelope &env)
 {
 	int     amount   = env.getAmount();
 	int     max      = env.getMaxAmount();
@@ -222,7 +220,7 @@ QWidget *EnveloppesUi::createCard(const Enveloppe &env)
 	return wrapper;
 }
 
-QVBoxLayout *EnveloppesUi::setupCardLayout(QWidget *card)
+QVBoxLayout *EnvelopesUi::setupCardLayout(QWidget *card)
 {
 	auto *layout = new QVBoxLayout(card);
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -230,7 +228,7 @@ QVBoxLayout *EnveloppesUi::setupCardLayout(QWidget *card)
 	return layout;
 }
 
-void EnveloppesUi::addCardContent(QVBoxLayout *layout, const Enveloppe &env, const QString &barColor, int percent)
+void EnvelopesUi::addCardContent(QVBoxLayout *layout, const Envelope &env, const QString &barColor, int percent)
 {
 	auto *nameLabel = new QLabel(QString::fromStdString(env.getName()));
 	nameLabel->setStyleSheet(R"(
@@ -242,12 +240,9 @@ void EnveloppesUi::addCardContent(QVBoxLayout *layout, const Enveloppe &env, con
 		border: none;
 	)");
 
-	QLocale jpLocale(QLocale::Japanese, QLocale::Japan);
-	QLocale frLocale(QLocale::French, QLocale::France);
-	float   rate = getEurJpyRateCached();
-
-	QString formattedAmount = "¥ " + jpLocale.toString(env.getAmount());
-	QString eurAmount       = rate > 0 ? "€ " + frLocale.toString(env.getAmount() / rate, 'f', 2) : "-€";
+	QString formattedAmount = "¥ " + Money::yen(env.getAmount());
+	QString eurNum          = Money::euro(env.getAmount(), QString());
+	QString eurAmount       = eurNum.isEmpty() ? "-€" : "€ " + eurNum;
 
 	auto *amountLabel = new QLabel(QString("%1\n%2").arg(formattedAmount, eurAmount));
 	amountLabel->setStyleSheet(QString(R"(
@@ -266,7 +261,7 @@ void EnveloppesUi::addCardContent(QVBoxLayout *layout, const Enveloppe &env, con
 	layout->addWidget(createGoalMaxLabel(env));
 }
 
-QWidget *EnveloppesUi::createCardButtons(const Enveloppe &env)
+QWidget *EnvelopesUi::createCardButtons(const Envelope &env)
 {
 	auto *container = new QWidget;
 	auto *layout    = new QHBoxLayout(container);
@@ -299,7 +294,7 @@ QWidget *EnveloppesUi::createCardButtons(const Enveloppe &env)
 	return container;
 }
 
-QList<QPushButton *> EnveloppesUi::createCardButtonList(const Enveloppe &env)
+QList<QPushButton *> EnvelopesUi::createCardButtonList(const Envelope &env)
 {
 	auto makeBtn = [](const QString &iconPath)
 	{
@@ -317,39 +312,35 @@ QList<QPushButton *> EnveloppesUi::createCardButtonList(const Enveloppe &env)
 	    makeBtn(RIGHT_ICON)};
 }
 
-void EnveloppesUi::connectCardButtons(const Enveloppe &env, const QList<QPushButton *> &buttons)
+void EnvelopesUi::connectCardButtons(const Envelope &env, const QList<QPushButton *> &buttons)
 {
 	connect(buttons[0], &QPushButton::clicked, this, [this, env]()
-	        { deleteEnveloppe(env); });
+	        { deleteEnvelope(env); });
 	connect(buttons[1], &QPushButton::clicked, this, [this, env]()
 	        {
-		addEnveloppe(env.getName());
+		addEnvelope(env.getName());
 		emit updateNeeded(); });
 	connect(buttons[2], &QPushButton::clicked, this, [this, env]() mutable
 	        {
-		g_enveloppeManager.switchCloud(env.getName());
+		g_envelopeManager.switchCloud(env.getName());
 		emit updateNeeded(); });
 	connect(buttons[3], &QPushButton::clicked, this, [this, env]()
 	        {
-		g_enveloppeManager.moveEnveloppe(env.getName(), true);
+		g_envelopeManager.moveEnvelope(env.getName(), true);
 		emit updateNeeded(); });
 	connect(buttons[4], &QPushButton::clicked, this, [this, env]()
 	        {
-		g_enveloppeManager.moveEnveloppe(env.getName(), false);
+		g_envelopeManager.moveEnvelope(env.getName(), false);
 		emit updateNeeded(); });
 }
 
-QWidget *EnveloppesUi::createGoalMaxLabel(const Enveloppe &env)
+QWidget *EnvelopesUi::createGoalMaxLabel(const Envelope &env)
 {
-	QLocale jp(QLocale::Japanese, QLocale::Japan);
-	QLocale fr(QLocale::French, QLocale::France);
-	float   rate = getEurJpyRateCached();
+	QString maxYen  = Money::yen(env.getMaxAmount());
+	QString goalYen = Money::yen(env.getGoal());
 
-	QString maxYen  = jp.toString(env.getMaxAmount());
-	QString goalYen = jp.toString(env.getGoal());
-
-	QString maxEur  = rate > 0 ? fr.toString(env.getMaxAmount() / rate, 'f', 2) + "€" : "-€";
-	QString goalEur = rate > 0 ? fr.toString(env.getGoal() / rate, 'f', 2) + "€" : "-€";
+	QString maxEur  = Money::euro(env.getMaxAmount()) + "€";
+	QString goalEur = Money::euro(env.getGoal()) + "€";
 
 	auto *label = new QLabel(QString("Plafond / 上限額  ¥%1 | %2\nObjectif mensuel / 月間目標  ¥%3 | %4")
 	                             .arg(maxYen, maxEur, goalYen, goalEur));
@@ -364,7 +355,7 @@ QWidget *EnveloppesUi::createGoalMaxLabel(const Enveloppe &env)
 	return label;
 }
 
-QWidget *EnveloppesUi::createProgressLabel(QString barColor, int percent)
+QWidget *EnvelopesUi::createProgressLabel(QString barColor, int percent)
 {
 	auto *container = new QWidget;
 	auto *layout    = new QHBoxLayout(container);
@@ -405,7 +396,7 @@ QWidget *EnveloppesUi::createProgressLabel(QString barColor, int percent)
 	return container;
 }
 
-QString EnveloppesUi::getProgressBarColor(int percent, const Enveloppe &env)
+QString EnvelopesUi::getProgressBarColor(int percent, const Envelope &env)
 {
 	if ( env.getAmount() <= 0 )
 		return "background-color: #FA5E57;";
@@ -428,20 +419,20 @@ QString EnveloppesUi::getProgressBarColor(int percent, const Enveloppe &env)
 		return "background-color: #FA5E57;";
 }
 
-KakeiboScrollArea *EnveloppesUi::createScrollArea(QWidget *content)
+KakeiboScrollArea *EnvelopesUi::createScrollArea(QWidget *content)
 {
 	scrollArea = new KakeiboScrollArea(this);
 	scrollArea->setWidget(content);
 	return scrollArea;
 }
 
-void EnveloppesUi::addEnveloppe(std::string name)
+void EnvelopesUi::addEnvelope(std::string name)
 {
 	QDialog dialog(this);
-	setupEnveloppeDialog(dialog);
+	setupEnvelopeDialog(dialog);
 
-	QFormLayout        *formLayout = new QFormLayout(&dialog);
-	EnveloppeFormFields fields;
+	QFormLayout       *formLayout = new QFormLayout(&dialog);
+	EnvelopeFormFields fields;
 	createFields(&dialog, formLayout, fields);
 
 	if ( !name.empty() )
@@ -450,10 +441,10 @@ void EnveloppesUi::addEnveloppe(std::string name)
 	addDialogButtons(&dialog, formLayout);
 
 	if ( dialog.exec() == QDialog::Accepted )
-		handleEnveloppeSubmission(fields, name);
+		handleEnvelopeSubmission(fields, name);
 }
 
-void EnveloppesUi::setupEnveloppeDialog(QDialog &dialog)
+void EnvelopesUi::setupEnvelopeDialog(QDialog &dialog)
 {
 	dialog.setWindowTitle("Ajouter une enveloppe / 封筒を追加");
 	dialog.setStyleSheet(R"(
@@ -489,9 +480,9 @@ void EnveloppesUi::setupEnveloppeDialog(QDialog &dialog)
 	)");
 }
 
-void EnveloppesUi::preFillFieldsFromName(const std::string &name, EnveloppeFormFields &fields)
+void EnvelopesUi::preFillFieldsFromName(const std::string &name, EnvelopeFormFields &fields)
 {
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
+	for ( const auto &env : g_envelopeManager.getEnvelopes() )
 	{
 		if ( env.getName() == name )
 		{
@@ -514,7 +505,7 @@ void EnveloppesUi::preFillFieldsFromName(const std::string &name, EnveloppeFormF
 	}
 }
 
-void EnveloppesUi::createFields(QDialog *dialog, QFormLayout *layout, EnveloppeFormFields &f)
+void EnvelopesUi::createFields(QDialog *dialog, QFormLayout *layout, EnvelopeFormFields &f)
 {
 	f.nameFrInput = new QLineEdit(dialog);
 	f.nameJpInput = new QLineEdit(dialog);
@@ -546,7 +537,7 @@ void EnveloppesUi::createFields(QDialog *dialog, QFormLayout *layout, EnveloppeF
 	connect(f.nameJpInput, &QLineEdit::textChanged, updateCombinedName);
 }
 
-void EnveloppesUi::addDialogButtons(QDialog *dialog, QFormLayout *layout)
+void EnvelopesUi::addDialogButtons(QDialog *dialog, QFormLayout *layout)
 {
 	QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
 	layout->addWidget(buttons);
@@ -555,7 +546,7 @@ void EnveloppesUi::addDialogButtons(QDialog *dialog, QFormLayout *layout)
 	connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
 }
 
-void EnveloppesUi::handleEnveloppeSubmission(const EnveloppeFormFields &f, std::string oldName)
+void EnvelopesUi::handleEnvelopeSubmission(const EnvelopeFormFields &f, std::string oldName)
 {
 	QString name      = f.nameInput->text();
 	int     amount    = f.amountInput->text().toInt();
@@ -564,12 +555,12 @@ void EnveloppesUi::handleEnveloppeSubmission(const EnveloppeFormFields &f, std::
 	bool    savings   = f.savingsCheck->isChecked();
 
 	if ( !oldName.empty() )
-		g_enveloppeManager.modifyEnveloppe(oldName, name.toStdString(), amount, maxAmount, goal, savings);
+		g_envelopeManager.modifyEnvelope(oldName, name.toStdString(), amount, maxAmount, goal, savings);
 	else
-		g_enveloppeManager.addEnveloppe(name.toStdString(), amount, maxAmount, goal, savings);
+		g_envelopeManager.addEnvelope(name.toStdString(), amount, maxAmount, goal, savings);
 }
 
-void EnveloppesUi::deleteEnveloppe(Enveloppe env)
+void EnvelopesUi::deleteEnvelope(const Envelope &env)
 {
 	if ( env.getAmount() != 0 )
 	{
@@ -579,12 +570,12 @@ void EnveloppesUi::deleteEnveloppe(Enveloppe env)
 
 	if ( confirmDeletion() )
 	{
-		g_enveloppeManager.deleteEnveloppe(env.getName());
+		g_envelopeManager.deleteEnvelope(env.getName());
 		emit updateNeeded();
 	}
 }
 
-void EnveloppesUi::showNonEmptyWarning()
+void EnvelopesUi::showNonEmptyWarning()
 {
 	QDialog *warn = new QDialog(this);
 	warn->setWindowTitle("Suppression impossible / 削除できません");
@@ -603,7 +594,7 @@ void EnveloppesUi::showNonEmptyWarning()
 	warn->exec();
 }
 
-bool EnveloppesUi::confirmDeletion()
+bool EnvelopesUi::confirmDeletion()
 {
 	QDialog *confirm = new QDialog(this);
 	confirm->setWindowTitle("Confirmation / 確認");
@@ -626,29 +617,12 @@ bool EnveloppesUi::confirmDeletion()
 	return confirm->exec() == QDialog::Accepted;
 }
 
-QString EnveloppesUi::dialogStyleSheet()
+QString EnvelopesUi::dialogStyleSheet()
 {
-	return R"(
-	       QDialog {
-	       background-color: #242F32;
-	       color: #E1E1E2;
-	       font-family: "Helvetica Neue";
-       }
-	       QPushButton {
-	       background-color: #1B272A;
-	       color: #E1E1E2;
-	       border: none;
-	       padding: 6px 12px;
-	       border-radius: 4px;
-	       min-width: 80px;
-       }
-	       QPushButton:hover {
-	       background-color: #2F3D41;
-       }
-	       )";
+	return Theme::dialogStyle(DOWN_ICON);
 }
 
-void EnveloppesUi::clearEnveloppes()
+void EnvelopesUi::clearEnvelopes()
 {
 	if ( layout() )
 	{

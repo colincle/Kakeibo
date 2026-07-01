@@ -1,7 +1,9 @@
 #pragma once
 
+#include "json.hpp"
+
 #include <chrono>
-#include <json.hpp>
+#include <sstream>
 #include <string>
 
 using json = nlohmann::json;
@@ -11,7 +13,7 @@ struct Expense
 	std::chrono::year_month_day date;
 	int                         amount;
 	std::string                 info;
-	std::string                 enveloppe;
+	std::string                 envelope;
 	bool                        isCredit;
 };
 
@@ -32,7 +34,7 @@ inline void to_json(json &j, const Expense &e)
 	j = json {{"date", dateStr},
 	          {"amount", e.amount},
 	          {"info", e.info},
-	          {"enveloppe", e.enveloppe},
+	          {"enveloppe", e.envelope},
 	          {"isCredit", e.isCredit}};
 }
 
@@ -44,8 +46,8 @@ inline void from_json(const json &j, Expense &e)
 	std::istringstream(dateStr) >> y >> sep1 >> m >> sep2 >> d;
 	e.date = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
 
-	e.amount    = j.at("amount").get<int>();
-	e.info      = j.at("info").get<std::string>();
-	e.enveloppe = j.at("enveloppe").get<std::string>();
-	e.isCredit  = j.contains("isCredit") ? j.at("isCredit").get<bool>() : false;
+	e.amount   = j.at("amount").get<int>();
+	e.info     = j.at("info").get<std::string>();
+	e.envelope = j.at("enveloppe").get<std::string>();
+	e.isCredit = j.contains("isCredit") ? j.at("isCredit").get<bool>() : false;
 }

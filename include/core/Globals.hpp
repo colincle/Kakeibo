@@ -1,24 +1,20 @@
 #pragma once
 
-#include "EnveloppeManager.hpp"
-
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
-#include <string>
+#include "EnvelopeManager.hpp"
 
 #include <QEventLoop>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QString>
 #include <QUrl>
 
-inline EnveloppeManager g_enveloppeManager;
+inline EnvelopeManager g_envelopeManager;
 
 float getEurJpyRateBlocking();
-float fallbackRate();
 
 inline float getEurJpyRateCached()
 {
@@ -26,12 +22,34 @@ inline float getEurJpyRateCached()
 	return rate;
 }
 
-inline float getEurJpyRateBlocking()
+// Money formatting helpers, so every page formats yen/euro the same way.
+namespace Money
+{
+// Yen amount with Japanese thousands separators (no ¥ sign).
+inline QString yen(int amount)
+{
+	return QLocale(QLocale::Japanese, QLocale::Japan).toString(amount);
+}
+
+// Euro value converted from yen (no € sign), or the given fallback if the
+// exchange rate is unavailable.
+inline QString euro(int amountYen, const QString &fallback = QStringLiteral("-"))
+{
+	float rate = getEurJpyRateCached();
+
+	if ( rate > 0 )
+		return QLocale(QLocale::French, QLocale::France).toString(amountYen / rate, 'f', 2);
+
+	return fallback;
+}
+} // namespace Money
+
+// Blocking GET of a keyless FX endpoint returning { "rates": { "JPY": <value> } }.
+// Returns the EUR->JPY rate, or -1 on any failure.
+inline float fetchEurJpy(const QUrl &url)
 {
 	QNetworkAccessManager manager;
 	QEventLoop            loop;
-	QString               apiKey = "REMOVED_API_KEY";
-	QUrl                  url("http://api.currencylayer.com/live?access_key=" + apiKey + "&currencies=EUR,JPY");
 	QNetworkReply        *reply = manager.get(QNetworkRequest(url));
 	QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
 	loop.exec();
@@ -40,67 +58,28 @@ inline float getEurJpyRateBlocking()
 
 	if ( reply->error() == QNetworkReply::NoError )
 	{
-		QByteArray    data = reply->readAll();
-		QJsonDocument doc  = QJsonDocument::fromJson(data);
+		QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+		double        jpy = doc.object()["rates"].toObject()["JPY"].toDouble();
 
-		if ( doc.isObject() && doc.object()["success"].toBool() )
-		{
-			QJsonObject quotes   = doc.object()["quotes"].toObject();
-			double      usdToJpy = quotes["USDJPY"].toDouble();
-			double      usdToEur = quotes["USDEUR"].toDouble();
-			rate                 = static_cast<float>(usdToJpy / usdToEur);
-		}
+		if ( jpy > 0.0 )
+			rate = static_cast<float>(jpy);
 		else
-			qWarning() << "Invalid JSON or request failed";
+			qWarning() << "Unexpected exchange-rate response from" << url.toString();
 	}
 	else
 		qWarning() << "Network error:" << reply->errorString();
 
 	reply->deleteLater();
-
-	if ( rate == -1.0f )
-		rate = fallbackRate();
-
 	return rate;
 }
 
-inline float fallbackRate()
+inline float getEurJpyRateBlocking()
 {
-	FILE *pipe = popen(R"(curl -s "https://wise.com/gb/currency-converter/eur-to-jpy-rate")", "r");
+	// Primary and fallback are both keyless and share the same JSON shape.
+	float rate = fetchEurJpy(QUrl("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=JPY"));
 
-	if ( !pipe )
-		return -1.0f;
-
-	char        buffer[4096];
-	std::string html;
-
-	while ( fgets(buffer, sizeof(buffer), pipe) )
-		html += buffer;
-
-	pclose(pipe);
-
-	std::string markerStart = ">€1 EUR = ";
-	std::string markerEnd   = " JPY<";
-
-	auto start = html.find(markerStart);
-
-	if ( start == std::string::npos )
-		return -1.0f;
-
-	start += markerStart.length();
-
-	auto end = html.find(markerEnd, start);
-
-	if ( end == std::string::npos )
-		return -1.0f;
-
-	std::string       rateStr = html.substr(start, end - start);
-	std::stringstream ss(rateStr);
-	float             rate = -1.0f;
-	ss >> rate;
-
-	if ( ss.fail() )
-		return -1.0f;
+	if ( rate <= 0.0f )
+		rate = fetchEurJpy(QUrl("https://open.er-api.com/v6/latest/EUR"));
 
 	return rate;
 }

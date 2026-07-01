@@ -6,11 +6,11 @@
 
 #include "ExpenseStruct.hpp"
 
-enum MyEnum
+enum class Bank
 {
-	RAKUTEN,
-	MITSUBISHI,
-	RAKUTEN_CREDIT
+	Rakuten,
+	Mitsubishi,
+	RakutenCredit
 };
 
 class Parser
@@ -26,7 +26,7 @@ class Parser
 	static std::vector<Expense>        parseExpenses(std::string data, std::chrono::year year);
 	static std::string                 convertFullWidthToAscii(const std::string &input);
 	static std::vector<std::string>    removeEmptyLines(const std::vector<std::string> &lines);
-	static int                         whichBank(std::string line);
+	static Bank                        whichBank(std::string line);
 	static std::vector<Expense>        fillExpensesStructMitsubishi(std::vector<std::string>, std::chrono::year year);
 	static std::vector<Expense>        fillExpensesStructRakutenCredit(std::vector<std::string>);
 	static std::vector<Expense>        fillExpensesStructRakuten(std::vector<std::string>);

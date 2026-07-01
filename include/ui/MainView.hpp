@@ -4,7 +4,7 @@
 
 class QGridLayout;
 class QStackedWidget;
-class EnveloppesUi;
+class EnvelopesUi;
 class History;
 class Stats;
 class MenuBar;
@@ -18,11 +18,11 @@ class MainView : public QWidget
 	explicit MainView(MenuBar *menuBar, QWidget *parent = nullptr);
 
   private:
-	QStackedWidget *stack        = nullptr;
-	EnveloppesUi   *enveloppesUI = nullptr;
-	History        *history      = nullptr;
-	Stats          *stats        = nullptr;
-	Dispatch       *dispatch     = nullptr;
+	QStackedWidget *stack       = nullptr;
+	EnvelopesUi    *envelopesUI = nullptr;
+	History        *history     = nullptr;
+	Stats          *stats       = nullptr;
+	Dispatch       *dispatch    = nullptr;
 	MenuBar        &menuBar;
 
 	void handleMenuAction(int i);

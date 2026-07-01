@@ -1,9 +1,11 @@
 #include "History.hpp"
 #include "Assets.hpp"
-#include "EnveloppeManager.hpp"
+#include "DateRange.hpp"
+#include "EnvelopeManager.hpp"
 #include "Globals.hpp"
 #include "KakeiboScrollArea.hpp"
 #include "KakeiboTable.hpp"
+#include "Theme.hpp"
 
 #include <QAbstractItemView>
 #include <QComboBox>
@@ -40,7 +42,7 @@ void History::showHistory()
 	topBarContainer = new QWidget(this);
 	topBar          = new QHBoxLayout(topBarContainer);
 	topBar->setAlignment(Qt::AlignLeft);
-	topBar->addLayout(createEnveloppeDropdown());
+	topBar->addLayout(createEnvelopeDropdown());
 	topBar->addLayout(createDateDropdowns());
 	mainLayout->insertWidget(0, topBarContainer);
 
@@ -95,13 +97,13 @@ void History::setUpTable(KakeiboTable *table)
 
 		QString date = table->item(row, 0)->data(Qt::UserRole).toString();
 		QString amount = table->item(row, 1)->data(Qt::UserRole).toString();
-		QString enveloppe = table->item(row, 2)->data(Qt::UserRole).toString();
+		QString envelope = table->item(row, 2)->data(Qt::UserRole).toString();
 		QString desc = table->item(row, 3)->data(Qt::UserRole).toString();
 
-		handleRightClick(date, amount, enveloppe, desc); });
+		handleRightClick(date, amount, envelope, desc); });
 }
 
-void History::handleRightClick(const QString &date, const QString &amount, const QString &enveloppe, const QString &desc)
+void History::handleRightClick(const QString &date, const QString &amount, const QString &envelope, const QString &desc)
 {
 	QMenu *menu = new QMenu(this);
 	menu->setStyleSheet(R"(
@@ -114,18 +116,18 @@ void History::handleRightClick(const QString &date, const QString &amount, const
 
 	QMenu *moveMenu = menu->addMenu("Déplacer vers une autre enveloppe / 別の封筒に移動");
 
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
+	for ( const auto &env : g_envelopeManager.getEnvelopes() )
 	{
 		QString name = QString::fromStdString(env.getName());
 
-		if ( name == enveloppe )
+		if ( name == envelope )
 			continue;
 
 		QAction *action = moveMenu->addAction(name);
 		moveMenu->addSeparator();
 		connect(action, &QAction::triggered, this, [=, this]()
 		        {
-			g_enveloppeManager.moveExpenseToNewEnveloppe(date, amount, enveloppe, desc, name);
+			g_envelopeManager.moveExpenseToNewEnvelope(date, amount, envelope, desc, name);
 			emit updateNeeded(); });
 	}
 
@@ -138,12 +140,12 @@ void History::handleRightClick(const QString &date, const QString &amount, const
 
 	if ( selection == forgetAction )
 	{
-		g_enveloppeManager.forgetExpenseType(enveloppe, desc);
+		g_envelopeManager.forgetExpenseType(envelope, desc);
 		emit updateNeeded();
 	}
 	else if ( selection == deleteAction )
 	{
-		g_enveloppeManager.deleteExpense(date, amount, enveloppe, desc);
+		g_envelopeManager.deleteExpense(date, amount, envelope, desc);
 		emit updateNeeded();
 	}
 }
@@ -164,7 +166,7 @@ std::vector<Expense> History::collectFilteredExpenses()
 {
 	std::vector<Expense> result;
 
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
+	for ( const auto &env : g_envelopeManager.getEnvelopes() )
 	{
 		if ( selected != "Tous すべて" && env.getName() != selected )
 			continue;
@@ -203,7 +205,7 @@ void History::fillTableWithExpenses(KakeiboTable *table, const std::vector<Expen
 		amountItem->setData(Qt::UserRole, QString::number(exp.amount));
 		table->setItem(row, 1, amountItem);
 
-		QString originalEnv = QString::fromStdString(exp.enveloppe);
+		QString originalEnv = QString::fromStdString(exp.envelope);
 		QString displayEnv  = originalEnv;
 		displayEnv.replace('\n', ' ');
 		auto *envItem = new QTableWidgetItem(displayEnv);
@@ -219,28 +221,12 @@ void History::fillTableWithExpenses(KakeiboTable *table, const std::vector<Expen
 
 void History::updateGlobalDateRange()
 {
-	static bool                          firstTime = true;
-	std::optional<std::chrono::sys_days> minDate, maxDate;
+	static bool firstTime = true;
 
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
+	if ( auto range = expenseDateRange() )
 	{
-		for ( const auto &exp : env.getExpenses() )
-		{
-			if ( !minDate || exp.date < *minDate )
-				minDate = exp.date;
-
-			if ( !maxDate || exp.date > *maxDate )
-				maxDate = exp.date;
-		}
-	}
-
-	if ( minDate && maxDate )
-	{
-		auto ymdMin     = std::chrono::year_month_day {*minDate};
-		globalStartDate = std::chrono::year_month {ymdMin.year(), ymdMin.month()};
-
-		auto ymdMax   = std::chrono::year_month_day {*maxDate};
-		globalEndDate = std::chrono::year_month {ymdMax.year(), ymdMax.month()};
+		globalStartDate = range->first;
+		globalEndDate   = range->second;
 
 		if ( firstTime )
 		{
@@ -251,66 +237,43 @@ void History::updateGlobalDateRange()
 	}
 }
 
-QHBoxLayout *History::createEnveloppeDropdown()
+QHBoxLayout *History::createEnvelopeDropdown()
 {
 	QHBoxLayout *layout = new QHBoxLayout();
 
-	QLabel *enveloppeLabel = new QLabel("Enveloppe 封筒:", this);
-	enveloppeLabel->setStyleSheet("color: #E1E1E2; font-family: 'Helvetica Neue';");
+	QLabel *envelopeLabel = new QLabel("Enveloppe 封筒:", this);
+	envelopeLabel->setStyleSheet("color: #E1E1E2; font-family: 'Helvetica Neue';");
 
-	enveloppeCombo = new QComboBox(this);
-	enveloppeCombo->setStyleSheet(setUpComboStyleSheet());
+	envelopeCombo = new QComboBox(this);
+	envelopeCombo->setStyleSheet(setUpComboStyleSheet());
 
-	enveloppeCombo->addItem("Tous すべて");
+	envelopeCombo->addItem("Tous すべて");
 
-	for ( const auto &env : g_enveloppeManager.getEnveloppes() )
-		enveloppeCombo->addItem(QString::fromStdString(env.getName()));
+	for ( const auto &env : g_envelopeManager.getEnvelopes() )
+		envelopeCombo->addItem(QString::fromStdString(env.getName()));
 
 	if ( !selected.empty() )
 	{
-		int index = enveloppeCombo->findText(QString::fromStdString(selected));
+		int index = envelopeCombo->findText(QString::fromStdString(selected));
 
 		if ( index != -1 )
-			enveloppeCombo->setCurrentIndex(index);
+			envelopeCombo->setCurrentIndex(index);
 	}
 
-	connect(enveloppeCombo, &QComboBox::currentTextChanged, [this](const QString &text)
+	connect(envelopeCombo, &QComboBox::currentTextChanged, [this](const QString &text)
 	        {
 		selected = text.toStdString();
 		QTimer::singleShot(0, this, &History::showHistory); });
 
-	layout->addWidget(enveloppeLabel);
-	layout->addWidget(enveloppeCombo);
+	layout->addWidget(envelopeLabel);
+	layout->addWidget(envelopeCombo);
 
 	return layout;
 }
 
 QString History::setUpComboStyleSheet()
 {
-	return QString(R"(
-		QComboBox {
-			background-color: #1B272A;
-			color: #E1E1E2;
-			border: 1px solid #444;
-			border-radius: 4px;
-			padding-left: 6px;
-			min-height: 28px;
-			min-width: 100;
-		}
-		QComboBox::drop-down {
-			subcontrol-origin: padding;
-			subcontrol-position: top right;
-			width: 25px;
-			border-left: 1px solid #444;
-			background-color: #2F3D41;
-		}
-		QComboBox::down-arrow {
-			image: url(%1);
-			width: 12px;
-			height: 12px;
-		}
-	)")
-	    .arg(DOWN_ICON);
+	return Theme::comboBoxStyle(DOWN_ICON);
 }
 
 QHBoxLayout *History::createDateDropdowns()

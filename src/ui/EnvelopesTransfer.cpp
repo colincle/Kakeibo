@@ -1,6 +1,7 @@
-#include "EnveloppesTransfer.hpp"
+#include "EnvelopesTransfer.hpp"
 #include "Assets.hpp"
 #include "Globals.hpp"
+#include "Theme.hpp"
 
 #include <functional>
 #include <tuple>
@@ -18,14 +19,14 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-void EnveloppesTransfer::transfer(QWidget *parent)
+void EnvelopesTransfer::transfer(QWidget *parent)
 {
 	QDialog dialog(parent);
 	setupDialogStyle(dialog);
 
-	std::vector<Enveloppe> envs = g_enveloppeManager.getEnveloppes();
-	envs.push_back(g_enveloppeManager.getCreditEnveloppe());
-	envs.push_back(g_enveloppeManager.getIncomeEnveloppe());
+	std::vector<Envelope> envs = g_envelopeManager.getEnvelopes();
+	envs.push_back(g_envelopeManager.getCreditEnvelope());
+	envs.push_back(g_envelopeManager.getIncomeEnvelope());
 
 	TransferUi ui = createUiElements(dialog, envs);
 	fillComboBoxes(ui);
@@ -36,59 +37,12 @@ void EnveloppesTransfer::transfer(QWidget *parent)
 		applyTransfer(ui);
 }
 
-void EnveloppesTransfer::setupDialogStyle(QDialog &dialog)
+void EnvelopesTransfer::setupDialogStyle(QDialog &dialog)
 {
-	QString style = QString(R"(
-		QDialog {
-			background-color: #242F32;
-			color: #E1E1E2;
-			font-family: "Helvetica Neue";
-		}
-		QLabel {
-			color: #E1E1E2;
-		}
-		QLineEdit, QComboBox {
-			background-color: #1B272A;
-			color: #E1E1E2;
-			border: 1px solid #444;
-			border-radius: 4px;
-			padding: 4px;
-			min-height: 28px;
-			padding-left: 6px;
-		}
-		QComboBox::drop-down {
-			subcontrol-origin: padding;
-			subcontrol-position: top right;
-			width: 25px;
-			border-left: 1px solid #444;
-			background-color: #2F3D41;
-		}
-		QComboBox::down-arrow {
-			image: url(%1);
-			width: 12px;
-			height: 12px;
-		}
-		QPushButton {
-			background-color: #1B272A;
-			color: #E1E1E2;
-			border: none;
-			padding: 6px 12px;
-			border-radius: 2px;
-			min-width: 80px;
-		}
-		QPushButton:hover {
-			background-color: #2F3D41;
-		}
-		QPushButton:disabled {
-			color: gray;
-		}
-	)")
-	                    .arg(DOWN_ICON);
-
-	dialog.setStyleSheet(style);
+	dialog.setStyleSheet(Theme::dialogStyle(DOWN_ICON));
 }
 
-TransferUi EnveloppesTransfer::createUiElements(QDialog &dialog, const std::vector<Enveloppe> &envs)
+TransferUi EnvelopesTransfer::createUiElements(QDialog &dialog, const std::vector<Envelope> &envs)
 {
 	QComboBox *fromBox = createComboBox(dialog);
 	QComboBox *toBox   = createComboBox(dialog);
@@ -111,7 +65,7 @@ TransferUi EnveloppesTransfer::createUiElements(QDialog &dialog, const std::vect
 	return ui;
 }
 
-QComboBox *EnveloppesTransfer::createComboBox(QDialog &dialog)
+QComboBox *EnvelopesTransfer::createComboBox(QDialog &dialog)
 {
 	QComboBox *box  = new QComboBox(&dialog);
 	QListView *view = new QListView(&dialog);
@@ -132,7 +86,7 @@ QComboBox *EnveloppesTransfer::createComboBox(QDialog &dialog)
 	return box;
 }
 
-std::tuple<QDialogButtonBox *, QPushButton *, QPushButton *> EnveloppesTransfer::createDialogButtons(QDialog &dialog)
+std::tuple<QDialogButtonBox *, QPushButton *, QPushButton *> EnvelopesTransfer::createDialogButtons(QDialog &dialog)
 {
 	auto *box    = new QDialogButtonBox(Qt::Horizontal, &dialog);
 	auto *ok     = new QPushButton("OK 確定", &dialog);
@@ -145,9 +99,9 @@ std::tuple<QDialogButtonBox *, QPushButton *, QPushButton *> EnveloppesTransfer:
 	return {box, ok, cancel};
 }
 
-void EnveloppesTransfer::fillComboBoxes(TransferUi &ui)
+void EnvelopesTransfer::fillComboBoxes(TransferUi &ui)
 {
-	for ( const auto &env : ui.enveloppes )
+	for ( const auto &env : ui.envelopes )
 	{
 		QString name = QString::fromStdString(env.getName());
 		ui.fromBox->addItem(name);
@@ -155,7 +109,7 @@ void EnveloppesTransfer::fillComboBoxes(TransferUi &ui)
 	}
 }
 
-void EnveloppesTransfer::buildLayout(QDialog &dialog, TransferUi &ui)
+void EnvelopesTransfer::buildLayout(QDialog &dialog, TransferUi &ui)
 {
 	QFormLayout *layout = createFormLayout(dialog);
 	styleWidgets(ui);
@@ -165,7 +119,7 @@ void EnveloppesTransfer::buildLayout(QDialog &dialog, TransferUi &ui)
 	layout->addWidget(ui.buttons);
 }
 
-QFormLayout *EnveloppesTransfer::createFormLayout(QDialog &dialog)
+QFormLayout *EnvelopesTransfer::createFormLayout(QDialog &dialog)
 {
 	QFormLayout *layout = new QFormLayout(&dialog);
 	layout->setLabelAlignment(Qt::AlignLeft);
@@ -174,7 +128,7 @@ QFormLayout *EnveloppesTransfer::createFormLayout(QDialog &dialog)
 	return layout;
 }
 
-void EnveloppesTransfer::styleWidgets(TransferUi &ui)
+void EnvelopesTransfer::styleWidgets(TransferUi &ui)
 {
 	QString comboStyle = R"(
 		background-color: #1B272A;
@@ -197,13 +151,13 @@ void EnveloppesTransfer::styleWidgets(TransferUi &ui)
 	ui.previewLabel->setStyleSheet("color: #E1E1E2;");
 }
 
-void EnveloppesTransfer::addComboBoxes(QFormLayout *layout, TransferUi &ui)
+void EnvelopesTransfer::addComboBoxes(QFormLayout *layout, TransferUi &ui)
 {
 	layout->addRow("De\n送金元:", ui.fromBox);
 	layout->addRow("À\n送金先:", ui.toBox);
 }
 
-void EnveloppesTransfer::setupConnections(TransferUi &ui, QDialog &dialog)
+void EnvelopesTransfer::setupConnections(TransferUi &ui, QDialog &dialog)
 {
 	auto updateOk      = makeUpdateOk(ui);
 	auto updatePreview = makeUpdatePreview(ui);
@@ -223,7 +177,7 @@ void EnveloppesTransfer::setupConnections(TransferUi &ui, QDialog &dialog)
 	ui.okButton->setEnabled(false);
 }
 
-auto EnveloppesTransfer::makeUpdateOk(const TransferUi &ui) -> std::function<void()>
+auto EnvelopesTransfer::makeUpdateOk(const TransferUi &ui) -> std::function<void()>
 {
 	return [=]()
 	{
@@ -235,12 +189,12 @@ auto EnveloppesTransfer::makeUpdateOk(const TransferUi &ui) -> std::function<voi
 
 		size_t fromIdx = static_cast<size_t>(fromRaw);
 		int    amount  = ui.amountEdit->text().toInt();
-		bool   valid   = !ui.amountEdit->text().isEmpty() && amount > 0 && amount <= ui.enveloppes[fromIdx].getAmount();
+		bool   valid   = !ui.amountEdit->text().isEmpty() && amount > 0 && amount <= ui.envelopes[fromIdx].getAmount();
 		ui.okButton->setEnabled(valid);
 	};
 }
 
-auto EnveloppesTransfer::makeUpdatePreview(const TransferUi &ui) -> std::function<void()>
+auto EnvelopesTransfer::makeUpdatePreview(const TransferUi &ui) -> std::function<void()>
 {
 	return [=]()
 	{
@@ -254,31 +208,31 @@ auto EnveloppesTransfer::makeUpdatePreview(const TransferUi &ui) -> std::functio
 		size_t fromIdx = static_cast<size_t>(fromRaw);
 		size_t toIdx   = static_cast<size_t>(toRaw);
 
-		NewAmounts n = EnveloppesTransfer::newAmounts(
-		    ui.enveloppes[fromIdx], ui.enveloppes[toIdx], amount);
-		QString fn = QString::fromStdString(ui.enveloppes[fromIdx].getName());
-		QString tn = QString::fromStdString(ui.enveloppes[toIdx].getName());
+		NewAmounts n = EnvelopesTransfer::newAmounts(
+		    ui.envelopes[fromIdx], ui.envelopes[toIdx], amount);
+		QString fn = QString::fromStdString(ui.envelopes[fromIdx].getName());
+		QString tn = QString::fromStdString(ui.envelopes[toIdx].getName());
 		fn.replace('\n', ' ');
 		tn.replace('\n', ' ');
 		ui.previewLabel->setText(QString("%1: %2 → %3\n%4: %5 → %6")
 		                             .arg(fn)
-		                             .arg(ui.enveloppes[fromIdx].getAmount())
+		                             .arg(ui.envelopes[fromIdx].getAmount())
 		                             .arg(n.newFrom)
 		                             .arg(tn)
-		                             .arg(ui.enveloppes[toIdx].getAmount())
+		                             .arg(ui.envelopes[toIdx].getAmount())
 		                             .arg(n.newTo));
 	};
 }
 
-void EnveloppesTransfer::applyTransfer(const TransferUi &ui)
+void EnvelopesTransfer::applyTransfer(const TransferUi &ui)
 {
 	std::string from   = ui.fromBox->currentText().toStdString();
 	std::string to     = ui.toBox->currentText().toStdString();
 	int         amount = ui.amountEdit->text().toInt();
-	g_enveloppeManager.transfer(from, to, amount);
+	g_envelopeManager.transfer(from, to, amount);
 }
 
-NewAmounts EnveloppesTransfer::newAmounts(Enveloppe from, Enveloppe to, int amount)
+NewAmounts EnvelopesTransfer::newAmounts(const Envelope &from, const Envelope &to, int amount)
 {
 	NewAmounts newAmounts;
 	newAmounts.newFrom = from.getAmount() - amount;

@@ -1,76 +1,22 @@
 #include "Backups.hpp"
-#include "EnveloppeManager.hpp"
+#include "AppPaths.hpp"
 #include "Globals.hpp"
 
 #include <QDate>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfoList>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <algorithm>
 
 #include <filesystem>
 
-QString Backups::getPath()
-{
-	QString basePath = QString::fromStdString(std::filesystem::path(g_enveloppeManager.getPath()).string());
-	QString jsonPath = basePath + "/backups.json";
-
-	if ( !QFile::exists(jsonPath) )
-	{
-		QFile newFile(jsonPath);
-
-		if ( newFile.open(QIODevice::WriteOnly) )
-		{
-			QJsonObject obj;
-			obj["path"] = "";
-			newFile.write(QJsonDocument(obj).toJson());
-			newFile.close();
-		}
-	}
-
-	QFile file(jsonPath);
-
-	if ( !file.open(QIODevice::ReadOnly) )
-		return "";
-
-	QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-	file.close();
-
-	QString storedPath = doc.object().value("path").toString();
-
-	if ( storedPath.isEmpty() || !QDir(storedPath).exists() )
-	{
-		QString chosenDir = QFileDialog::getExistingDirectory(nullptr, "Sélectionner le dossier de backup / バックアップ用フォルダを選択");
-
-		if ( chosenDir.isEmpty() )
-			return "";
-
-		QJsonObject newObj;
-		newObj["path"] = chosenDir;
-
-		if ( file.open(QIODevice::WriteOnly | QIODevice::Truncate) )
-		{
-			file.write(QJsonDocument(newObj).toJson());
-			file.close();
-		}
-
-		return chosenDir;
-	}
-
-	return storedPath;
-}
-
 void Backups::backup()
 {
-	QString backupRoot = getPath();
+	QString backupRoot = AppPaths::configuredDir("backups.json", "Sélectionner le dossier de backup / バックアップ用フォルダを選択");
 
 	if ( backupRoot.isEmpty() )
 		return;
 
-	QString basePath        = QString::fromStdString(std::filesystem::path(g_enveloppeManager.getPath()).string());
+	QString basePath        = QString::fromStdString(std::filesystem::path(g_envelopeManager.getPath()).string());
 	QString todayName       = QDate::currentDate().toString("yyyy-MM-dd");
 	QString todayBackupPath = backupRoot + "/" + todayName;
 
