@@ -40,3 +40,21 @@ target_link_libraries(Kakeibo
 	Qt6::Widgets
 	Qt6::Network
 )
+
+# --- Tests -------------------------------------------------------------------
+# The parser is pure logic with no Qt dependency, so it can be unit tested in
+# isolation. Run with: cmake --build build && ctest --test-dir build
+enable_testing()
+
+add_executable(parser_tests
+	tests/test_parser.cpp
+	src/core/Parser.cpp
+)
+
+target_include_directories(parser_tests PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/include/core
+	${CMAKE_CURRENT_SOURCE_DIR}/external/json
+)
+
+add_test(NAME parser_tests COMMAND parser_tests)
