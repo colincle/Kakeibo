@@ -4,11 +4,14 @@
 # Allow root files and main directories
 !/CMakeLists.txt
 !/.gitignore
+!/README.md
+!/LICENSE
 !/assets/
 !/external/
 !/include/
 !/scripts/
 !/src/
+!/tests/
 
 # Global ignores (inside folders)
 **/.DS_Store
