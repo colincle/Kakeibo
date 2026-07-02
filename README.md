@@ -8,6 +8,11 @@ transactions, and watch each envelope fill up or drain over the month.
 
 Written in **C++20** with **Qt 6**. The interface is bilingual (French / 日本語).
 
+![The envelopes view](screenshots/screenshot.png)
+
+*The figures in this screenshot are fictional sample data created for
+illustration. They do not represent any real account or transaction.*
+
 ## Background
 
 This is a personal tool, built for my own use and shared publicly as a portfolio

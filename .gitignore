@@ -12,6 +12,7 @@
 !/scripts/
 !/src/
 !/tests/
+!/screenshots/
 
 # Global ignores (inside folders)
 **/.DS_Store
