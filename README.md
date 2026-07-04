@@ -22,6 +22,7 @@ two currencies, euros and yen, using the kakeibo approach.
 Because it only ever needed to fit one person, the scope is intentionally narrow:
 
 - Single-user desktop app. All data is stored locally, with no accounts and no backend.
+- Built and tested on macOS only.
 - The interface is French and Japanese only.
 - The statement importers handle just the banks I use (Rakuten Bank, Rakuten Card, Mitsubishi UFJ).
 
