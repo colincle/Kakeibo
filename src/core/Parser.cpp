@@ -148,42 +148,76 @@ std::vector<Expense> Parser::fillExpensesStructRakutenCredit(std::vector<std::st
 {
 	std::vector<Expense> expenses;
 
-	for ( const std::string &line : lines )
+	auto splitTabs = [](const std::string &line)
 	{
-		std::istringstream stream(line);
-		std::string        dateStr, description, tmp, amountStr;
+		std::vector<std::string> fields;
+		std::istringstream       stream(line);
+		std::string              field;
 
-		std::getline(stream, dateStr, '\t');
-		std::getline(stream, description, '\t');
-		std::getline(stream, tmp, '\t');
-		std::getline(stream, tmp, '\t');
-		std::getline(stream, amountStr, '\t');
+		while ( std::getline(stream, field, '\t') )
+			fields.push_back(field);
 
-		if ( dateStr.empty() || amountStr.empty() )
+		return fields;
+	};
+
+	auto parseDate = [](const std::string &s, std::chrono::year_month_day &out)
+	{
+		int                y, m, d;
+		char               sep1, sep2;
+		std::istringstream stream(s);
+
+		if ( !(stream >> y >> sep1 >> m >> sep2 >> d) || sep1 != '/' || sep2 != '/' )
+			return false;
+
+		out = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
+		return true;
+	};
+
+	auto extractAmount = [](std::string s)
+	{
+		s.erase(std::remove_if(s.begin(), s.end(),
+		                       [](unsigned char c)
+		                       { return !std::isdigit(c); }),
+		        s.end());
+		return s;
+	};
+
+	for ( size_t i = 0; i < lines.size(); ++i )
+	{
+		std::vector<std::string> fields = splitTabs(lines[i]);
+
+		std::chrono::year_month_day date;
+
+		if ( fields.size() < 2 || !parseDate(fields[0], date) )
 			continue;
 
-		auto trim = [](std::string &s)
-		{
-			s.erase(0, s.find_first_not_of(" \t\r\n"));
-			s.erase(s.find_last_not_of(" \t\r\n") + 1);
-		};
-		trim(amountStr);
+		std::string description = fields[1];
+		std::string amountStr;
 
-		amountStr.erase(std::remove_if(amountStr.begin(), amountStr.end(),
-		                               [](unsigned char c)
-		                               { return !std::isdigit(c); }),
-		                amountStr.end());
-
-		Expense e;
+		if ( fields.size() >= 5 )
 		{
-			int  y, m, d;
-			char sep1, sep2;
-			std::istringstream(dateStr) >> y >> sep1 >> m >> sep2 >> d;
-			e.date = std::chrono::year(y) / std::chrono::month(static_cast<unsigned>(m)) / std::chrono::day(static_cast<unsigned>(d));
+			// Old format: date, description, person, installments, amount on one line.
+			amountStr = extractAmount(fields[4]);
+		}
+		else if ( i + 1 < lines.size() )
+		{
+			// New format: the line holds only date and description; person,
+			// installments and amount follow on the next line.
+			std::vector<std::string> details = splitTabs(lines[i + 1]);
+
+			if ( details.size() >= 3 )
+			{
+				amountStr = extractAmount(details[2]);
+				++i;
+			}
 		}
 
-		int amount = parseIntOr(amountStr, 0);
-		e.amount   = -amount;
+		if ( amountStr.empty() )
+			continue;
+
+		Expense e;
+		e.date     = date;
+		e.amount   = -parseIntOr(amountStr, 0);
 		e.info     = description;
 		e.envelope = "";
 		e.isCredit = true;

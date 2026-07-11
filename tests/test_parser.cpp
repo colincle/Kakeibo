@@ -101,6 +101,34 @@ static void test_parse_rakuten_credit()
 	}
 }
 
+static void test_parse_rakuten_credit_new_format()
+{
+	// Newer export splits each record over two lines: "date \t description",
+	// then "person \t installments \t amount \t ..." with blank lines between.
+	std::string data =
+	    "2026/07/08\tVISA国内利用 VS ロ-ソン\n"
+	    "\n"
+	    "本人\t1回払い\t¥ 1,185\t支払金額を変更する\n"
+	    "\n\n\n"
+	    "2026/07/08\tVISA国内利用 VS ロ-ソン\n"
+	    "\n"
+	    "家族\t1回払い\t¥ 1,078\t支払金額を変更する\n";
+	auto exp = Parser::parseExpenses(data, std::chrono::year {2026});
+
+	CHECK(exp.size() == 2);
+
+	if ( exp.size() == 2 )
+	{
+		CHECK(exp[0].amount == -1185);
+		CHECK(exp[0].info == "VISA国内利用 VS ロ-ソン");
+		CHECK(exp[0].isCredit == true);
+		CHECK(dateIs(exp[0], 2026, 7, 8));
+
+		CHECK(exp[1].amount == -1078);
+		CHECK(dateIs(exp[1], 2026, 7, 8));
+	}
+}
+
 static void test_parse_mitsubishi()
 {
 	// Tab separated, first column "mm/dd" (1 slash); year comes from the arg.
@@ -131,6 +159,7 @@ int main()
 	test_parseShortDate();
 	test_parse_rakuten();
 	test_parse_rakuten_credit();
+	test_parse_rakuten_credit_new_format();
 	test_parse_mitsubishi();
 	test_parse_empty();
 
