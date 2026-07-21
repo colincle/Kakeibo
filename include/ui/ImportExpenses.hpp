@@ -3,6 +3,7 @@
 #include "Envelope.hpp"
 #include "ExpenseStruct.hpp"
 
+#include <cstddef>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +29,7 @@ class ImportExpenses final
 	static void import(QWidget *parent);
 
 	static void addExpense(QWidget *parent, const Expense &e);
+	static void notifyAlreadyImported(QWidget *parent, std::size_t added, std::size_t skipped);
 
 	static std::pair<int, std::string> showImportDialog(QWidget *parent);
 	static QString                     setDialogStyleSheet();

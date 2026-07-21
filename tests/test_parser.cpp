@@ -151,6 +151,78 @@ static void test_parse_empty()
 	CHECK(Parser::parseExpenses("\n\n\n", std::chrono::year {2024}).empty());
 }
 
+static Expense makeExpense(int y, unsigned m, unsigned d, int amount, const std::string &info, bool isCredit = false)
+{
+	Expense e;
+	e.date     = std::chrono::year {y} / std::chrono::month {m} / std::chrono::day {d};
+	e.amount   = amount;
+	e.info     = info;
+	e.envelope = "";
+	e.isCredit = isCredit;
+	return e;
+}
+
+static void test_filter_new_expenses()
+{
+	Expense a = makeExpense(2024, 1, 15, -500, "FamilyMart");
+	Expense b = makeExpense(2024, 1, 16, -1200, "SEVEN");
+	Expense c = makeExpense(2024, 1, 17, -300, "Drugstore");
+
+	// Nothing stored yet: every pasted row is new.
+	{
+		auto out = Parser::filterNewExpenses({a, b, c}, {});
+		CHECK(out.size() == 3);
+	}
+
+	// Everything already stored: re-pasting the same list adds nothing, whatever
+	// the order.
+	{
+		auto out = Parser::filterNewExpenses({c, a, b}, {a, b, c});
+		CHECK(out.empty());
+	}
+
+	// Mixed paste: only the rows missing from storage survive, and out-of-order
+	// pastes are handled.
+	{
+		auto out = Parser::filterNewExpenses({c, a, b}, {a});
+		CHECK(out.size() == 2);
+
+		if ( out.size() == 2 )
+		{
+			CHECK(out[0].info == "Drugstore"); // c, kept in paste order
+			CHECK(out[1].info == "SEVEN");     // b
+		}
+	}
+
+	// Two genuinely distinct expenses sharing date, amount and shop: both are
+	// kept when neither is stored yet.
+	{
+		auto out = Parser::filterNewExpenses({a, a}, {});
+		CHECK(out.size() == 2);
+	}
+
+	// One such duplicate is already stored: re-pasting both keeps exactly one.
+	{
+		auto out = Parser::filterNewExpenses({a, a}, {a});
+		CHECK(out.size() == 1);
+	}
+
+	// Storage holds two copies, paste holds three: only the extra one is new.
+	{
+		auto out = Parser::filterNewExpenses({a, a, a}, {a, a});
+		CHECK(out.size() == 1);
+	}
+
+	// Same date, amount and shop but different credit flag are treated as
+	// distinct records (a bank debit vs a credit charge).
+	{
+		Expense bank   = makeExpense(2024, 1, 15, -500, "FamilyMart", false);
+		Expense credit = makeExpense(2024, 1, 15, -500, "FamilyMart", true);
+		auto    out    = Parser::filterNewExpenses({bank}, {credit});
+		CHECK(out.size() == 1);
+	}
+}
+
 int main()
 {
 	test_whichBank();
@@ -162,6 +234,7 @@ int main()
 	test_parse_rakuten_credit_new_format();
 	test_parse_mitsubishi();
 	test_parse_empty();
+	test_filter_new_expenses();
 
 	if ( g_failures == 0 )
 		std::printf("All parser tests passed.\n");

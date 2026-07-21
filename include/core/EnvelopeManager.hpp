@@ -18,6 +18,7 @@ class EnvelopeManager
 	std::vector<Envelope> &getEnvelopes() { return envelopes; }
 	Envelope              &getIncomeEnvelope() { return incomeEnvelope; }
 	Envelope              &getCreditEnvelope() { return creditEnvelope; }
+	std::vector<Expense>   getAllExpenses() const;
 
 	void addEnvelope(const std::string &name, int amount, int maxAmount, int goal, bool savings);
 	void modifyEnvelope(const std::string &oldName, const std::string &name, int amount, int maxAmount, int goal, bool savings);

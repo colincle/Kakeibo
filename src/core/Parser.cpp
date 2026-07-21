@@ -4,9 +4,11 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace
@@ -48,6 +50,47 @@ std::vector<Expense> Parser::parseExpenses(std::string data, std::chrono::year y
 	default:
 		return {};
 	}
+}
+
+// Keep only the parsed expenses that are not already stored. Matching is done on
+// date, amount, description and credit flag, counting occurrences: a re-pasted
+// statement (in any order, possibly mixing old and new rows) drops the rows
+// already imported, but two genuinely distinct expenses with the same date,
+// amount and shop are both kept, and a real duplicate present once in storage
+// only suppresses one pasted copy.
+std::vector<Expense> Parser::filterNewExpenses(const std::vector<Expense> &parsed, const std::vector<Expense> &existing)
+{
+	using Key = std::tuple<long, int, std::string, bool>;
+
+	auto key = [](const Expense &e)
+	{
+		long y       = static_cast<long>(static_cast<int>(e.date.year()));
+		long m       = static_cast<long>(static_cast<unsigned>(e.date.month()));
+		long d       = static_cast<long>(static_cast<unsigned>(e.date.day()));
+		long dateKey = y * 10000 + m * 100 + d;
+		return Key {dateKey, e.amount, e.info, e.isCredit};
+	};
+
+	std::map<Key, int> remaining;
+
+	for ( const Expense &e : existing )
+		++remaining[key(e)];
+
+	std::vector<Expense> result;
+
+	for ( const Expense &e : parsed )
+	{
+		auto it = remaining.find(key(e));
+
+		// Each stored expense cancels one matching pasted row; once the stored
+		// copies are used up, further matching rows are treated as new.
+		if ( it != remaining.end() && it->second > 0 )
+			--it->second;
+		else
+			result.push_back(e);
+	}
+
+	return result;
 }
 
 std::string Parser::convertFullWidthToAscii(const std::string &input)

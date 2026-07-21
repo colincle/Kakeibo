@@ -275,6 +275,22 @@ void EnvelopeManager::addTypeAndExpense(const std::string &name, const Expense &
 		}
 }
 
+std::vector<Expense> EnvelopeManager::getAllExpenses() const
+{
+	std::vector<Expense> all;
+
+	auto append = [&all](const std::vector<Expense> &exps)
+	{ all.insert(all.end(), exps.begin(), exps.end()); };
+
+	for ( const Envelope &env : envelopes )
+		append(env.getExpenses());
+
+	append(creditEnvelope.getExpenses());
+	append(incomeEnvelope.getExpenses());
+
+	return all;
+}
+
 void EnvelopeManager::addExpense(Expense e, Envelope &env)
 {
 	if ( e.isCredit )

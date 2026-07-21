@@ -24,6 +24,7 @@ class Parser
   public:
 	static std::vector<std::string>    splitIntoLines(std::string data);
 	static std::vector<Expense>        parseExpenses(std::string data, std::chrono::year year);
+	static std::vector<Expense>        filterNewExpenses(const std::vector<Expense> &parsed, const std::vector<Expense> &existing);
 	static std::string                 convertFullWidthToAscii(const std::string &input);
 	static std::vector<std::string>    removeEmptyLines(const std::vector<std::string> &lines);
 	static Bank                        whichBank(std::string line);

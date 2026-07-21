@@ -13,6 +13,7 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QLocale>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QString>
@@ -31,10 +32,32 @@ void ImportExpenses::import(QWidget *parent)
 		return;
 
 	std::chrono::year    year {yearInt};
-	std::vector<Expense> expenses = Parser::parseExpenses(data, year);
+	std::vector<Expense> parsed = Parser::parseExpenses(data, year);
+
+	// Rakuten no longer lists movements in a stable order, so the paste may mix
+	// rows already imported with new ones. Keep only the ones not already stored.
+	std::vector<Expense> expenses = Parser::filterNewExpenses(parsed, g_envelopeManager.getAllExpenses());
 
 	for ( const Expense &e : expenses )
 		addExpense(parent, e);
+
+	std::size_t skipped = parsed.size() - expenses.size();
+
+	if ( skipped > 0 )
+		notifyAlreadyImported(parent, expenses.size(), skipped);
+}
+
+void ImportExpenses::notifyAlreadyImported(QWidget *parent, std::size_t added, std::size_t skipped)
+{
+	QMessageBox box(parent);
+	box.setStyleSheet(setDialogStyleSheet());
+	box.setIcon(QMessageBox::Information);
+	box.setWindowTitle("Import");
+	box.setText(QString("%1 nouvelle(s) dépense(s) ajoutée(s), %2 déjà présente(s) ignorée(s).\n"
+	                    "新規%1件を追加、既存%2件をスキップしました。")
+	                .arg(added)
+	                .arg(skipped));
+	box.exec();
 }
 
 std::pair<int, std::string> ImportExpenses::showImportDialog(QWidget *parent)
