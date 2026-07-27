@@ -53,6 +53,11 @@ void MenuBar::updateTotalLabel()
 	total += g_envelopeManager.getIncomeEnvelope().getAmount();
 
 	totalLabel->setText(QString("¥%1 | %2€").arg(Money::yen(total), Money::euro(total)));
+
+	// Hover reveals the actual bank balance: the displayed total already has the
+	// outstanding credit subtracted, so add it back to get what's really in the bank.
+	int bank = total + g_envelopeManager.getCreditEnvelope().getAmount();
+	totalLabel->setToolTip(QString("En banque : ¥%1 | %2€").arg(Money::yen(bank), Money::euro(bank)));
 }
 
 void MenuBar::setStyle()
